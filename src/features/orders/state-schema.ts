@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { PAYMENT_METHODS } from "@/features/checkout/checkout-schema";
 import { SHIPPING_METHODS } from "@/features/checkout/pricing";
-import { ORDER_STATUSES, type Order } from "./types";
+import { CANCEL_REASONS, ORDER_STATUSES, type Order } from "./types";
 
 /**
  * Schema của file trạng thái (đơn hàng + tồn kho trong một file).
@@ -32,6 +32,29 @@ const orderCustomerSchema = z.looseObject({
   note: z.string().optional(),
 });
 
+const actorSchema = z.discriminatedUnion("kind", [
+  z.looseObject({ kind: z.literal("staff"), name: z.string().min(1) }),
+  z.looseObject({ kind: z.literal("customer") }),
+]);
+
+const statusChangeSchema = z.looseObject({
+  from: z.enum(ORDER_STATUSES).nullable(),
+  to: z.enum(ORDER_STATUSES),
+  // Mốc giờ luôn là ISO UTC (`Date#toISOString`), để timeline sắp xếp và hiển thị được.
+  at: z.iso.datetime(),
+  actor: actorSchema,
+});
+
+const cancellationSchema = z.looseObject({
+  reason: z.enum(CANCEL_REASONS).optional(),
+  note: z.string().optional(),
+  returnedToShop: z.boolean().optional(),
+});
+
+const flagsSchema = z.looseObject({
+  cancelRequestedAt: z.iso.datetime().optional(),
+});
+
 export const orderSchema = z.looseObject({
   id: z.string(),
   status: z.enum(ORDER_STATUSES),
@@ -44,6 +67,10 @@ export const orderSchema = z.looseObject({
   subtotal: z.number(),
   shippingFee: z.number(),
   total: z.number(),
+  statusHistory: z.array(statusChangeSchema).optional(),
+  cancellation: cancellationSchema.optional(),
+  stockApplied: z.boolean().optional(),
+  flags: flagsSchema.optional(),
 });
 
 const stockLedgerEntrySchema = z.looseObject({});

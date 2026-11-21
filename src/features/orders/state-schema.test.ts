@@ -56,7 +56,7 @@ describe("parseShopState", () => {
         {
           ...sampleOrder("SL-1"),
           foo: 1,
-          statusHistory: [{ to: "pending" }],
+          futureField: [{ to: "pending" }],
           customer: { ...sampleOrder("SL-1").customer, zalo: "abc" },
           items: [
             {

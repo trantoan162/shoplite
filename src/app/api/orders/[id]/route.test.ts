@@ -70,6 +70,21 @@ describe("PATCH /api/orders/:id (khách tự hủy)", () => {
     expect((await repository.current!.findById("SL-1"))?.status).toBe("cancelled");
   });
 
+  it("200 - response có dòng lịch sử pending → cancelled của khách", async () => {
+    await repository.current!.save(order("SL-1", "pending"));
+
+    const body = await (await patch("SL-1", { status: "cancelled" })).json();
+
+    expect(body.statusHistory).toEqual([
+      {
+        from: "pending",
+        to: "cancelled",
+        at: "2026-11-21T02:00:00.000Z",
+        actor: { kind: "customer" },
+      },
+    ]);
+  });
+
   it.each(["confirmed", "shipping", "delivered", "cancelled"] as const)(
     "409 - đơn %s không hủy được, giữ nguyên thông điệp và đơn",
     async (status) => {

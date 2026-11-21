@@ -89,11 +89,12 @@ export function createOrderService({
       });
 
       const createdAt = now();
+      const createdAtIso = createdAt.toISOString();
       const order: Order = {
         id: generateId(createdAt),
         status: "pending",
-        createdAt: createdAt.toISOString(),
-        updatedAt: createdAt.toISOString(),
+        createdAt: createdAtIso,
+        updatedAt: createdAtIso,
         customer: {
           fullName: customer.fullName,
           phone: customer.phone,
@@ -105,6 +106,9 @@ export function createOrderService({
         paymentMethod,
         items: orderItems,
         ...calculateOrderTotals(orderItems, shippingMethod),
+        statusHistory: [
+          { from: null, to: "pending", at: createdAtIso, actor: { kind: "customer" } },
+        ],
       };
 
       await repository.save(order);
@@ -133,7 +137,17 @@ export function createOrderService({
           );
         }
         // Lấy thời điểm khi đã giữ khóa, để updatedAt theo đúng thứ tự commit.
-        const cancelled: Order = { ...order, status: "cancelled", updatedAt: now().toISOString() };
+        const at = now().toISOString();
+        const cancelled: Order = {
+          ...order,
+          status: "cancelled",
+          updatedAt: at,
+          // Đơn cũ không có lịch sử: chỉ thêm dòng hủy, không bịa dòng tạo đơn (FR-18).
+          statusHistory: [
+            ...(order.statusHistory ?? []),
+            { from: order.status, to: "cancelled", at, actor: { kind: "customer" } },
+          ],
+        };
         state.orders[index] = cancelled;
         return { state, result: cancelled };
       });
