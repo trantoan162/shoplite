@@ -29,6 +29,10 @@ function mergeItems(items: { productId: string; quantity: number }[]) {
   return [...merged.entries()].map(([productId, quantity]) => ({ productId, quantity }));
 }
 
+function orderNotFound(id: string): OrderError {
+  return new OrderError("ORDER_NOT_FOUND", `Không tìm thấy đơn hàng "${id}"`);
+}
+
 export function createOrderService({
   repository,
   findProduct = getProductById,
@@ -37,9 +41,7 @@ export function createOrderService({
 }: OrderServiceDeps) {
   async function getOrder(id: string): Promise<Order> {
     const order = await repository.findById(id);
-    if (!order) {
-      throw new OrderError("ORDER_NOT_FOUND", `Không tìm thấy đơn hàng "${id}"`);
-    }
+    if (!order) throw orderNotFound(id);
     return order;
   }
 
@@ -119,16 +121,22 @@ export function createOrderService({
 
     /** Khách hàng chỉ được hủy đơn khi đơn còn ở trạng thái "Chờ xác nhận". */
     async cancelOrder(id: string): Promise<Order> {
-      const order = await getOrder(id);
-      if (order.status !== "pending") {
-        throw new OrderError(
-          "INVALID_STATUS_TRANSITION",
-          "Chỉ có thể hủy đơn hàng đang ở trạng thái Chờ xác nhận",
-        );
-      }
-      const cancelled: Order = { ...order, status: "cancelled", updatedAt: now().toISOString() };
-      await repository.save(cancelled);
-      return cancelled;
+      // Kiểm tra và ghi trong cùng một lần giữ khóa: không quyết định trên bản đọc cũ (AD-4, AD-8).
+      return repository.update((state) => {
+        const index = state.orders.findIndex((order) => order.id === id);
+        if (index < 0) throw orderNotFound(id);
+        const order = state.orders[index];
+        if (order.status !== "pending") {
+          throw new OrderError(
+            "INVALID_STATUS_TRANSITION",
+            "Chỉ có thể hủy đơn hàng đang ở trạng thái Chờ xác nhận",
+          );
+        }
+        // Lấy thời điểm khi đã giữ khóa, để updatedAt theo đúng thứ tự commit.
+        const cancelled: Order = { ...order, status: "cancelled", updatedAt: now().toISOString() };
+        state.orders[index] = cancelled;
+        return { state, result: cancelled };
+      });
     },
   };
 }
