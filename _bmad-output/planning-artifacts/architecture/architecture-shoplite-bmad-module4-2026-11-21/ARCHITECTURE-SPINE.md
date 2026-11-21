@@ -293,7 +293,7 @@ sequenceDiagram
 | Name | Version |
 | --- | --- |
 | Node.js | >= 22.12 |
-| Next.js (App Router, `src/proxy.ts`, Node runtime) | 16.4.2 |
+| Next.js (App Router, `src/proxy.ts`, Node runtime) | 16.4.6 |
 | React / React DOM | 19.3.0 |
 | TypeScript | ^5 |
 | Zod | ^4.6.7 |
@@ -384,4 +384,4 @@ erDiagram
 - **Hiệu năng đọc toàn file trong khóa:** đủ với < 100 đơn/ngày; xem lại khi file > vài MB.
 - **Scale ngang, nhiều tiến trình, DB:** ngoài phạm vi (PRD §5).
 - **Quyền riêng tư `/orders` công khai:** đã chấp nhận ở PRD OQ-1.
-- **Bản vá bảo mật Next 16.4.2:** chạy `npm audit` trước khi phát hành; nâng patch nếu có advisory.
+- **Bản vá bảo mật Next:** đã nâng 16.4.2 → 16.4.6 (2026-11-22, 7 advisory moderate). Chạy `npm audit` trước mỗi lần phát hành.

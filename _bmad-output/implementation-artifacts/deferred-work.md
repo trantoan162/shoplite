@@ -15,3 +15,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-4-chuyen-store-giu-don-cu.md`
   summary: Chiếm lock đã chết cho nguyên tử (hai tiến trình khởi động cùng lúc trên một lock chết có thể cùng tưởng mình giữ store); cân nhắc ghi thêm nonce/start-time vào lock để xử lý PID bị cấp lại.
   evidence: `takeLock` xóa lock chết rồi tạo lại bằng `link`; giữa lúc đọc chủ lock và lúc xóa vẫn còn khe hở. Chỉ xảy ra khi hai tiến trình khởi động đồng thời, mà AD-5 vốn đã chặn trường hợp này trong vận hành bình thường.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-3-co-lap-du-lieu-e2e.md`
+  summary: (Đã xử lý 2026-11-22) Nâng Next.js lên 16.4.6 trên branch `chore/next-16.4.6`; E2E không còn bị dừng.
+  evidence: npm audit không còn advisory cho `next`; E2E 3/3 xanh lần đầu, 0 thông báo bảo mật.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-3-co-lap-du-lieu-e2e.md`
+  summary: Còn 7 advisory moderate ở dev dependency (typescript-eslint, minimatch) — `npm audit fix` khi tiện.
+  evidence: npm audit sau khi nâng Next: moderate 7, high 0, critical 0; đều là công cụ lint, không chạy lúc runtime.
