@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { createMutex, getFileMutex, type Mutex } from "./mutex";
+import { acquireStoreLock, type ProcessLockDeps } from "./process-lock";
 import { createShopStateFile, type ShopStateFileDeps } from "./shop-state-file";
 import { assertShopStateInvariants, parseShopState, type ShopState } from "./state-schema";
 import type { Order } from "./types";
@@ -78,25 +79,45 @@ function createStateRepository({ mutex, load, persist }: StateRepositoryParts): 
   };
 }
 
-/**
- * File trạng thái chung `ShopState` (AD-3, AD-4). File chưa tồn tại thì đọc ra trạng thái rỗng
- * và chưa tạo file; khởi tạo từ dữ liệu cũ thuộc Story 1.4.
- */
+export interface ShopRepositoryDeps extends ShopStateFileDeps {
+  /**
+   * Dựng trạng thái đầu tiên khi store chưa tồn tại (AD-15). Chạy trong mutex, sau khi đã đọc lại
+   * file, nên chỉ chạy một lần; kết quả được commit trước khi trả về. Không có thì store chưa tồn
+   * tại được đọc là trạng thái rỗng và không tạo file.
+   */
+  initialize?: () => Promise<ShopState>;
+  /** PID lock `<file>.lock` (AD-5), lấy lười ở lần truy cập đầu. Mặc định bật. */
+  lock?: boolean | ProcessLockDeps;
+}
+
+/** File trạng thái chung `ShopState` (AD-3, AD-4). Tạo repository không đụng đĩa. */
 export function createJsonFileShopRepository(
   filePath: string,
-  deps: ShopStateFileDeps = {},
+  { initialize, lock = true, ...fileDeps }: ShopRepositoryDeps = {},
 ): OrderRepository {
-  const file = createShopStateFile(filePath, deps);
+  const file = createShopStateFile(filePath, fileDeps);
+  // Lock dùng cùng quy tắc khóa (platform) với mutex của file.
+  const lockDeps =
+    lock === false ? false : { platform: fileDeps.platform, ...(lock === true ? {} : lock) };
+
   return createStateRepository({
-    mutex: getFileMutex(filePath, deps.platform),
-    load: async () => (await file.read()) ?? emptyShopState(),
+    mutex: getFileMutex(filePath, fileDeps.platform),
+    async load() {
+      if (lockDeps) await acquireStoreLock(filePath, lockDeps);
+      const existing = await file.read();
+      if (existing) return existing;
+      if (!initialize) return emptyShopState();
+      const state = await initialize();
+      await file.commit(state);
+      return state;
+    },
     persist: (state) => file.commit(state),
   });
 }
 
 /**
- * File `orders.json` cũ (mảng `Order[]`). Là cầu nối cho production tới Story 1.4:
- * không lưu tồn kho — ghi chỉ giữ lại `orders`.
+ * File `orders.json` cũ (mảng `Order[]`). Từ Story 1.4 không còn caller production: đơn cũ được
+ * nhập vào store bằng `importLegacyOrders`. Không lưu tồn kho — ghi chỉ giữ lại `orders`.
  */
 export function createJsonFileOrderRepository(filePath: string): OrderRepository {
   async function readAll(): Promise<Order[]> {

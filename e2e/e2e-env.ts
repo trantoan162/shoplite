@@ -10,7 +10,7 @@ import path from "node:path";
 export const REPO_ROOT = path.resolve(__dirname, "..");
 export const E2E_DIR = path.join(REPO_ROOT, ".e2e");
 export const E2E_STORE_FILE = path.join(E2E_DIR, "shop-store.json");
-/** File đơn hàng mà server hiện ghi tới (Story 1.4 sẽ chuyển sang `E2E_STORE_FILE`). */
+/** File đơn cũ chỉ để nhập lần đầu (AD-15); E2E không tạo nó nên store luôn bắt đầu trống. */
 export const E2E_ORDERS_FILE = path.join(E2E_DIR, "legacy-orders.json");
 export const REAL_STORAGE_DIR = path.join(REPO_ROOT, "storage");
 

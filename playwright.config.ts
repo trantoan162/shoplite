@@ -62,8 +62,8 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       STORE_FILE: E2E_STORE_FILE,
-      // Hiện server vẫn ghi đơn vào ORDERS_FILE; từ Story 1.4 file này chỉ là nguồn nhập đơn cũ
-      // và không tồn tại, nên mỗi lần chạy E2E bắt đầu từ store trống.
+      // Chỉ là nguồn nhập đơn cũ (AD-15) và không tồn tại, nên mỗi lần chạy E2E bắt đầu từ store
+      // trống. Server ghi đơn vào STORE_FILE.
       ORDERS_FILE: E2E_ORDERS_FILE,
       STAFF_PINS: E2E_STAFF_PINS,
       STAFF_SESSION_SECRET: E2E_SESSION_SECRET,

@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { releaseStoreLocks } from "./process-lock";
 import { OrderError } from "./order-errors";
 import { createJsonFileShopRepository, type OrderRepository } from "./order-repository";
 import { createOrderService, type OrderService } from "./order-service";
@@ -36,6 +37,7 @@ describe("orderService trên file trạng thái — tương tranh", () => {
   });
 
   afterEach(async () => {
+    releaseStoreLocks();
     await rm(dir, { recursive: true, force: true });
   });
 

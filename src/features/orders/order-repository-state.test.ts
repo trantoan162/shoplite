@@ -5,6 +5,7 @@ import { defaultShopStateFs } from "./shop-state-file";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { releaseStoreLocks } from "./process-lock";
 import { OrderError } from "./order-errors";
 import {
   createInMemoryOrderRepository,
@@ -42,6 +43,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  releaseStoreLocks();
   await rm(dir, { recursive: true, force: true });
 });
 
@@ -193,9 +195,10 @@ describe("createInMemoryOrderRepository", () => {
 });
 
 describe("createJsonFileShopRepository", () => {
-  it("file chưa tồn tại: readState trả state rỗng và không tạo file", async () => {
+  it("file chưa tồn tại, không có initialize: readState trả state rỗng, không tạo store", async () => {
     const file = path.join(dir, "nested", "shop-store.json");
-    const repository = createJsonFileShopRepository(file);
+    // Tắt PID lock (Story 1.4) để kiểm riêng việc không tạo store; lock có test riêng.
+    const repository = createJsonFileShopRepository(file, { lock: false });
 
     expect(await repository.readState()).toEqual(emptyShopState());
     expect(existsSync(path.dirname(file))).toBe(false);

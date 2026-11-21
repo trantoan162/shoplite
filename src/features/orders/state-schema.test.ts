@@ -76,10 +76,7 @@ describe("parseShopState", () => {
 
   it.each([
     ["sai schemaVersion", { ...sampleState(), schemaVersion: 2 }],
-    [
-      "thiếu orders",
-      { schemaVersion: 1, inventory: {}, inventoryBaseline: {} },
-    ],
+    ["thiếu orders", { schemaVersion: 1, inventory: {}, inventoryBaseline: {} }],
     [
       "trạng thái đơn lạ",
       {
@@ -143,15 +140,10 @@ describe("parseShopState", () => {
       "customer thiếu phone",
       {
         ...sampleState(),
-        orders: [
-          { ...sampleOrder("SL-1"), customer: { fullName: "A", address: "B" } },
-        ],
+        orders: [{ ...sampleOrder("SL-1"), customer: { fullName: "A", address: "B" } }],
       },
     ],
-    [
-      "inventoryBaseline không phải số",
-      { ...sampleState(), inventoryBaseline: { p004: null } },
-    ],
+    ["inventoryBaseline không phải số", { ...sampleState(), inventoryBaseline: { p004: null } }],
   ])("ném ShopStateError khi %s", (_label, raw) => {
     expect(() => parseShopState(raw)).toThrow(ShopStateError);
   });
@@ -171,8 +163,6 @@ describe("assertShopStateInvariants", () => {
     ["inventoryBaseline âm", { inventoryBaseline: { p004: -3 } }],
     ["trùng mã đơn", { orders: [sampleOrder("SL-1"), sampleOrder("SL-1")] }],
   ])("ném lỗi khi %s", (_label, patch) => {
-    expect(() =>
-      assertShopStateInvariants({ ...sampleState(), ...patch }),
-    ).toThrow(ShopStateError);
+    expect(() => assertShopStateInvariants({ ...sampleState(), ...patch })).toThrow(ShopStateError);
   });
 });

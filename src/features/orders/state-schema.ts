@@ -78,12 +78,9 @@ export class ShopStateError extends Error {
 export function parseShopState(raw: unknown, source = "trạng thái"): ShopState {
   const result = shopStateSchema.safeParse(raw);
   if (!result.success) {
-    throw new ShopStateError(
-      `${source} không hợp lệ:\n${z.prettifyError(result.error)}`,
-      {
-        cause: result.error,
-      },
-    );
+    throw new ShopStateError(`${source} không hợp lệ:\n${z.prettifyError(result.error)}`, {
+      cause: result.error,
+    });
   }
   // Không ép kiểu: output của schema phải gán được vào ShopState/Order,
   // nên schema thiếu hoặc sai một trường bắt buộc của Order sẽ lỗi lúc typecheck.

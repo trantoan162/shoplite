@@ -70,17 +70,13 @@ function errorCode(error: unknown): string | undefined {
   return (error as NodeJS.ErrnoException | undefined)?.code;
 }
 
-const defaultSleep = (ms: number) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms));
+const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /**
  * File trạng thái `ShopState` (AD-3). Lớp thấp: không có khóa, không cache —
  * repository phía trên chịu trách nhiệm tuần tự hóa các lần đọc/ghi.
  */
-export function createShopStateFile(
-  filePath: string,
-  deps: ShopStateFileDeps = {},
-): ShopStateFile {
+export function createShopStateFile(filePath: string, deps: ShopStateFileDeps = {}): ShopStateFile {
   const fs = deps.fs ?? defaultShopStateFs;
   const sleep = deps.sleep ?? defaultSleep;
   const platform = deps.platform ?? process.platform;
@@ -113,14 +109,11 @@ export function createShopStateFile(
       let data: unknown;
       try {
         // Bỏ BOM nếu file từng được mở bằng trình soạn thảo trên Windows.
-        data = JSON.parse(raw.replace(/^﻿/, ""));
+        data = JSON.parse(raw.replace(/^\uFEFF/, ""));
       } catch (error) {
-        throw new ShopStateError(
-          `File trạng thái ${filePath} không phải JSON hợp lệ`,
-          {
-            cause: error,
-          },
-        );
+        throw new ShopStateError(`File trạng thái ${filePath} không phải JSON hợp lệ`, {
+          cause: error,
+        });
       }
       const state = parseShopState(data, `File trạng thái ${filePath}`);
       assertShopStateInvariants(state);

@@ -13,10 +13,7 @@ import {
 import { ShopStateError, type ShopState } from "./state-schema";
 import type { Order } from "./types";
 
-const sampleOrder = (
-  id: string,
-  status: Order["status"] = "pending",
-): Order => ({
+const sampleOrder = (id: string, status: Order["status"] = "pending"): Order => ({
   id,
   status,
   createdAt: "2026-11-20T14:40:00.000Z",
@@ -51,8 +48,7 @@ function errno(code: string): NodeJS.ErrnoException {
   return Object.assign(new Error(code), { code });
 }
 
-const fakeSleep = () =>
-  vi.fn<(ms: number) => Promise<void>>().mockResolvedValue(undefined);
+const fakeSleep = () => vi.fn<(ms: number) => Promise<void>>().mockResolvedValue(undefined);
 
 /** Bọc mọi hàm ghi của port bằng spy để kiểm tra "không đụng đĩa". */
 const spyWrites = () => ({
@@ -107,24 +103,17 @@ describe("createShopStateFile", () => {
           return {
             ...handle,
             writeFile:
-              failAt === "writeFile"
-                ? () => Promise.reject(errno("EIO"))
-                : handle.writeFile,
-            sync:
-              failAt === "sync"
-                ? () => Promise.reject(errno("EIO"))
-                : handle.sync,
+              failAt === "writeFile" ? () => Promise.reject(errno("EIO")) : handle.writeFile,
+            sync: failAt === "sync" ? () => Promise.reject(errno("EIO")) : handle.sync,
           };
         },
         rename:
-          failAt === "rename"
-            ? () => Promise.reject(errno("EIO"))
-            : defaultShopStateFs.rename,
+          failAt === "rename" ? () => Promise.reject(errno("EIO")) : defaultShopStateFs.rename,
       };
 
-      await expect(
-        createShopStateFile(file, { fs: failingFs }).commit(stateB()),
-      ).rejects.toThrow("EIO");
+      await expect(createShopStateFile(file, { fs: failingFs }).commit(stateB())).rejects.toThrow(
+        "EIO",
+      );
       expect(await readFile(file)).toEqual(before);
       // Repository mới trên cùng file = mô phỏng khởi động lại.
       expect(await createShopStateFile(file).read()).toEqual(stateA());
@@ -155,9 +144,7 @@ describe("createShopStateFile", () => {
   it("hết số lần thử (EBUSY liên tục) thì ném lỗi, file cũ còn nguyên", async () => {
     await createShopStateFile(file).commit(stateA());
     const before = await readFile(file);
-    const rename = vi
-      .fn<ShopStateFs["rename"]>()
-      .mockRejectedValue(errno("EBUSY"));
+    const rename = vi.fn<ShopStateFs["rename"]>().mockRejectedValue(errno("EBUSY"));
     const sleep = fakeSleep();
 
     await expect(
@@ -173,9 +160,7 @@ describe("createShopStateFile", () => {
   });
 
   it("lỗi rename không thuộc nhóm thử lại (ENOSPC) thì ném ngay", async () => {
-    const rename = vi
-      .fn<ShopStateFs["rename"]>()
-      .mockRejectedValue(errno("ENOSPC"));
+    const rename = vi.fn<ShopStateFs["rename"]>().mockRejectedValue(errno("ENOSPC"));
     const sleep = fakeSleep();
 
     await expect(
@@ -223,59 +208,40 @@ describe("createShopStateFile", () => {
         inventoryBaseline: {},
       }),
     ],
-  ])(
-    "file hỏng (%s): read ném ShopStateError và không ghi gì",
-    async (_label, content) => {
-      await createShopStateFile(file).commit(stateA());
-      await writeFile(file, content, "utf8");
-      const spyFs = spyWrites();
+  ])("file hỏng (%s): read ném ShopStateError và không ghi gì", async (_label, content) => {
+    await createShopStateFile(file).commit(stateA());
+    await writeFile(file, content, "utf8");
+    const spyFs = spyWrites();
 
-      await expect(
-        createShopStateFile(file, { fs: spyFs }).read(),
-      ).rejects.toThrow(ShopStateError);
-      expectNoWrites(spyFs);
-      expect(await readFile(file, "utf8")).toBe(content);
-      expect(existsSync(`${file}.tmp`)).toBe(false);
-    },
-  );
+    await expect(createShopStateFile(file, { fs: spyFs }).read()).rejects.toThrow(ShopStateError);
+    expectNoWrites(spyFs);
+    expect(await readFile(file, "utf8")).toBe(content);
+    expect(existsSync(`${file}.tmp`)).toBe(false);
+  });
 
   it.each([
     ["tồn kho âm", { ...stateA(), inventory: { p001: -1 } }],
     ["tồn kho số lẻ", { ...stateA(), inventory: { p001: 1.5 } }],
-    [
-      "trùng mã đơn",
-      { ...stateA(), orders: [sampleOrder("SL-1"), sampleOrder("SL-1")] },
-    ],
-  ])(
-    "bất biến sai (%s): commit ném lỗi và không đụng đĩa",
-    async (_label, state) => {
-      const spyFs = spyWrites();
+    ["trùng mã đơn", { ...stateA(), orders: [sampleOrder("SL-1"), sampleOrder("SL-1")] }],
+  ])("bất biến sai (%s): commit ném lỗi và không đụng đĩa", async (_label, state) => {
+    const spyFs = spyWrites();
 
-      await expect(
-        createShopStateFile(file, { fs: spyFs }).commit(state),
-      ).rejects.toThrow(ShopStateError);
-      expectNoWrites(spyFs);
-      expect(existsSync(path.dirname(file))).toBe(false);
-    },
-  );
+    await expect(createShopStateFile(file, { fs: spyFs }).commit(state)).rejects.toThrow(
+      ShopStateError,
+    );
+    expectNoWrites(spyFs);
+    expect(existsSync(path.dirname(file))).toBe(false);
+  });
 
   it.each([
     ["tồn kho âm", { ...stateA(), inventory: { p001: -1 } }],
-    [
-      "trùng mã đơn",
-      { ...stateA(), orders: [sampleOrder("SL-1"), sampleOrder("SL-1")] },
-    ],
-  ])(
-    "file trên đĩa vi phạm bất biến (%s): read ném ShopStateError",
-    async (_label, state) => {
-      await createShopStateFile(file).commit(stateA());
-      await writeFile(file, JSON.stringify(state), "utf8");
+    ["trùng mã đơn", { ...stateA(), orders: [sampleOrder("SL-1"), sampleOrder("SL-1")] }],
+  ])("file trên đĩa vi phạm bất biến (%s): read ném ShopStateError", async (_label, state) => {
+    await createShopStateFile(file).commit(stateA());
+    await writeFile(file, JSON.stringify(state), "utf8");
 
-      await expect(createShopStateFile(file).read()).rejects.toThrow(
-        ShopStateError,
-      );
-    },
-  );
+    await expect(createShopStateFile(file).read()).rejects.toThrow(ShopStateError);
+  });
 
   it("đọc được file có BOM UTF-8", async () => {
     await createShopStateFile(file).commit(stateA());
@@ -285,9 +251,7 @@ describe("createShopStateFile", () => {
   });
 
   it("lỗi đọc khác ENOENT (EACCES) được ném lên, không trả null", async () => {
-    const readFileFails = vi
-      .fn<ShopStateFs["readFile"]>()
-      .mockRejectedValue(errno("EACCES"));
+    const readFileFails = vi.fn<ShopStateFs["readFile"]>().mockRejectedValue(errno("EACCES"));
 
     await expect(
       createShopStateFile(file, {
@@ -338,9 +302,7 @@ describe("createShopStateFile", () => {
   });
 
   it("trên win32 không fsync thư mục; nền khác thì có", async () => {
-    const fsyncDir = vi
-      .fn<ShopStateFs["fsyncDir"]>()
-      .mockResolvedValue(undefined);
+    const fsyncDir = vi.fn<ShopStateFs["fsyncDir"]>().mockResolvedValue(undefined);
     const fs = { ...defaultShopStateFs, fsyncDir };
 
     await createShopStateFile(file, { fs, platform: "win32" }).commit(stateA());

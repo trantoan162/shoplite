@@ -25,9 +25,9 @@ test("đơn tạo trong E2E được ghi vào .e2e/, không vào storage/", asyn
   expect(response.status()).toBe(201);
   const { id } = (await response.json()) as { id: string };
 
-  // Theo file server đang thật sự ghi: store mới (từ Story 1.4) hoặc orders.json cũ.
-  const e2eIds = [...orderIdsIn(E2E_STORE_FILE), ...orderIdsIn(E2E_ORDERS_FILE)];
-  expect(e2eIds).toContain(id);
+  // Từ Story 1.4 server ghi vào store mới; file đơn cũ không bao giờ được ghi.
+  expect(orderIdsIn(E2E_STORE_FILE)).toContain(id);
+  expect(existsSync(E2E_ORDERS_FILE)).toBe(false);
 
   for (const name of ["orders.json", "shop-store.json"]) {
     expect(orderIdsIn(path.join(REAL_STORAGE_DIR, name))).not.toContain(id);
