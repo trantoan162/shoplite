@@ -35,6 +35,10 @@ if (!process.env.SHOPLITE_E2E_DATA_READY && !process.env.TEST_WORKER_INDEX) {
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
+  // Các spec dùng chung một store `.e2e/` và một dev server: chạy tuần tự để tránh chập chờn.
+  workers: 1,
+  // Dev server compile trang ở lần truy cập đầu; 5s mặc định hay bị vượt khi máy bận.
+  expect: { timeout: 10_000 },
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "github" : "list",
   use: {
