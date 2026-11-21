@@ -24,3 +24,7 @@ test-results/
 
 # OS
 .DS_Store
+
+# runtime data
+storage/
+.e2e/

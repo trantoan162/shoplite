@@ -109,6 +109,12 @@ curl -X POST http://localhost:3000/api/orders \
 | ------------- | --------------------- | --------------------------- |
 | `ORDERS_FILE` | `storage/orders.json` | Đường dẫn file lưu đơn hàng |
 
+### Dữ liệu khi chạy E2E
+
+`npm run test:e2e` tự khởi động server riêng với dữ liệu trong `.e2e/` (bị xóa ở đầu mỗi lần chạy, đã gitignore), không bao giờ ghi vào `storage/` thật. Biến môi trường cho server test nằm trong `e2e/e2e-env.ts`.
+
+**Tắt `npm run dev` trước khi chạy E2E**: Next.js 16 giữ `.next/dev/lock` và port 3000, và Playwright được cấu hình không dùng lại server đang chạy.
+
 ## Giấy phép
 
 [MIT](./LICENSE)
