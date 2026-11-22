@@ -11,16 +11,15 @@ import { StockBadge } from "@/features/catalog/components/stock-badge";
 import {
   buildCatalogHref,
   DEFAULT_CATALOG_QUERY,
-  getAllProducts,
   getCategoryBySlug,
   getDiscountPercent,
   getProductBySlug,
   getRelatedProducts,
 } from "@/features/catalog/catalog-service";
+import { getLiveProducts } from "@/features/orders/server";
 
-export function generateStaticParams() {
-  return getAllProducts().map((product) => ({ slug: product.slug }));
-}
+// Tồn kho thật thay đổi theo đơn hàng (AD-9): không prerender, render theo từng request.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -32,12 +31,16 @@ export async function generateMetadata({
 }
 
 export default async function ProductDetailPage({ params }: PageProps<"/products/[slug]">) {
-  const product = getProductBySlug((await params).slug);
+  const slug = (await params).slug;
+  // Slug không có trong catalog tĩnh → 404 ngay, không cần đọc store.
+  if (!getProductBySlug(slug)) notFound();
+  const liveProducts = await getLiveProducts();
+  const product = getProductBySlug(slug, liveProducts);
   if (!product) notFound();
 
   const category = getCategoryBySlug(product.categorySlug);
   const discount = getDiscountPercent(product);
-  const related = getRelatedProducts(product);
+  const related = getRelatedProducts(product, 4, liveProducts);
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-8">

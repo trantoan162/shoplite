@@ -14,6 +14,16 @@ export const E2E_STORE_FILE = path.join(E2E_DIR, "shop-store.json");
 export const E2E_ORDERS_FILE = path.join(E2E_DIR, "legacy-orders.json");
 export const REAL_STORAGE_DIR = path.join(REPO_ROOT, "storage");
 
+/**
+ * Sản phẩm được gieo tồn kho = 0 trong store E2E (catalog khai báo 18), để kiểm cửa hàng đọc tồn
+ * kho thật (Story 1.7). Không spec nào khác dùng sản phẩm này.
+ */
+export const E2E_SOLD_OUT_PRODUCT = {
+  id: "p015",
+  slug: "camera-an-ninh-homecam-2k",
+  category: "nha-thong-minh",
+} as const;
+
 /** Nhân viên dùng cho E2E — giá trị test, không phải bí mật thật. */
 export const E2E_STAFF = [
   { name: "An", pin: "111111" },

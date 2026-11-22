@@ -1,9 +1,10 @@
-import { rmSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
 import {
   E2E_DIR,
   E2E_ORDERS_FILE,
   E2E_SESSION_SECRET,
+  E2E_SOLD_OUT_PRODUCT,
   E2E_STAFF_PINS,
   E2E_STORE_FILE,
 } from "./e2e/e2e-env";
@@ -29,6 +30,19 @@ const BASE_URL = `http://localhost:${PORT}`;
 if (!process.env.SHOPLITE_E2E_DATA_READY && !process.env.TEST_WORKER_INDEX) {
   // Windows có thể còn giữ file vài trăm ms sau khi server cũ thoát.
   rmSync(E2E_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  // Store bắt đầu không có đơn; chỉ gieo một sản phẩm hết hàng (catalog khai báo còn hàng).
+  // Các sản phẩm khác được server thêm key bằng `stock` khai báo khi nạp store (reconcile).
+  mkdirSync(E2E_DIR, { recursive: true });
+  const soldOut = { [E2E_SOLD_OUT_PRODUCT.id]: 0 };
+  writeFileSync(
+    E2E_STORE_FILE,
+    JSON.stringify({
+      schemaVersion: 1,
+      orders: [],
+      inventory: soldOut,
+      inventoryBaseline: soldOut,
+    }),
+  );
   process.env.SHOPLITE_E2E_DATA_READY = "1";
 }
 

@@ -9,10 +9,14 @@ import {
   getFeaturedProducts,
 } from "@/features/catalog/catalog-service";
 import { FREE_SHIPPING_THRESHOLD } from "@/features/checkout/pricing";
+import { getLiveProducts } from "@/features/orders/server";
 import { formatCurrency } from "@/lib/format";
 
-export default function HomePage() {
-  const featured = getFeaturedProducts(4);
+// Hiển thị tồn kho thật (AD-9): render theo từng request.
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const featured = getFeaturedProducts(4, await getLiveProducts());
   const categories = getCategories();
 
   return (

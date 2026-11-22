@@ -92,4 +92,32 @@ describe("server.ts — orderService production", () => {
     expect(store.inventory.p010).toBe(declared);
     expect(store.inventoryBaseline.p010).toBe(declared);
   });
+
+  it("getLiveProducts thật: tồn kho trong store thắng stock khai báo", async () => {
+    const levels = Object.fromEntries(products.map((p) => [p.id, p.stock]));
+    await writeFile(
+      storeFile,
+      JSON.stringify({
+        schemaVersion: 1,
+        orders: [],
+        inventory: { ...levels, p001: 0 },
+        inventoryBaseline: levels,
+      }),
+      "utf8",
+    );
+    const { getLiveProducts } = await import("./server");
+
+    const live = await getLiveProducts();
+
+    expect(live.find((p) => p.id === "p001")?.stock).toBe(0);
+    expect(live.find((p) => p.id === "p002")?.stock).toBe(
+      products.find((p) => p.id === "p002")?.stock,
+    );
+  });
+
+  it("getLiveProducts thật: store hỏng → reject, không quay về stock khai báo", async () => {
+    await writeFile(storeFile, "{ hỏng", "utf8");
+    const { getLiveProducts } = await import("./server");
+    await expect(getLiveProducts()).rejects.toThrow();
+  });
 });

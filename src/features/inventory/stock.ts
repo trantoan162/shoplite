@@ -43,6 +43,20 @@ export function checkShortfall(
 }
 
 /**
+ * Bản sao catalog mang tồn kho thật (AD-9): mỗi sản phẩm là object mới với `stock` lấy từ
+ * `inventory`, thiếu key thì dùng `stock` khai báo. Không sửa `products`.
+ */
+export function withLiveStock<P extends Pick<Product, "id" | "stock">>(
+  products: readonly P[],
+  inventory: InventoryMap,
+): P[] {
+  return products.map((product) => ({
+    ...product,
+    stock: availableStock(inventory, product.id, declaredStock(product)),
+  }));
+}
+
+/**
  * Thêm key cho sản phẩm mới của catalog vào cả `inventory` và `inventoryBaseline` với `stock`
  * khai báo; giữ nguyên key đã có (kể cả id không còn trong catalog). Trả object mới.
  */
