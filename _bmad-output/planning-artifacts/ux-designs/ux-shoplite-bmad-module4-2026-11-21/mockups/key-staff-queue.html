@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup · Hàng đợi nhân viên (390px)</title>
+<style>
+/* Governed by: DESIGN.md Components (staff-header, queue-group-header, queue-order-card, stock-light-ok/short, conflict-notice, button-*)
+   EXPERIENCE.md Component Patterns (Queue order card, Stock light, Queue group header, Nút làm mới, Conflict notice),
+   State Patterns (Đèn đỏ, Xung đột, Nhóm rỗng), Key Flows Flow 1. Spine wins on conflict. */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',sans-serif;background:#e2e8f0;color:#0f172b;font-size:14px;line-height:1.45;display:flex;gap:32px;justify-content:center;flex-wrap:wrap;padding:24px 12px}
+.cap{width:390px;font-size:12px;color:#45556c;margin-bottom:8px}
+.phone{width:390px;min-height:844px;background:#f8fafc;border-radius:28px;overflow:hidden;box-shadow:0 10px 30px rgb(0 0 0/.15);border:8px solid #0f172b}
+.hdr{height:56px;background:#0f172b;color:#fff;display:flex;align-items:center;gap:8px;padding:0 16px}
+.logo{width:32px;height:32px;border-radius:8px;background:#4f39f6;display:flex;align-items:center;justify-content:center;font-size:16px}
+.hdr b{font-size:15px}
+.hdr .r{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:13px}
+.icon-btn{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff}
+.wrap{padding:16px;display:flex;flex-direction:column;gap:12px}
+h1{font-size:24px;font-weight:700}
+.grp{display:flex;align-items:center;gap:8px;font-weight:600;color:#314158;padding:4px 0;position:sticky;top:0;background:#f8fafc}
+.count{background:#e2e8f0;color:#314158;border-radius:9999px;font-size:12px;padding:0 8px;font-weight:600}
+.card{background:#fff;border-radius:16px;box-shadow:0 1px 3px rgb(0 0 0/.1),0 1px 2px -1px rgb(0 0 0/.1);outline:1px solid #e2e8f0;padding:16px;display:flex;flex-direction:column;gap:10px}
+.row{display:flex;align-items:center;gap:8px}
+.id{font-weight:600}
+.wait{font-size:12px;color:#62748e}
+.badge{margin-left:auto;font-size:12px;font-weight:600;border-radius:9999px;padding:2px 10px;box-shadow:inset 0 0 0 1px}
+.b-pending{background:#fffbeb;color:#bb4d00;box-shadow:inset 0 0 0 1px #fee685}
+.b-confirmed{background:#f0f9ff;color:#0069a8;box-shadow:inset 0 0 0 1px #b8e6fe}
+.b-shipping{background:#eef2ff;color:#432dd7;box-shadow:inset 0 0 0 1px #c6d2ff}
+.emo{display:flex}
+.emo span{width:36px;height:36px;border-radius:9999px;display:flex;align-items:center;justify-content:center;font-size:18px;border:2px solid #fff;margin-left:-10px}
+.emo span:first-child{margin-left:0}
+.meta{flex:1;font-size:13px;color:#45556c}
+.meta b{color:#0f172b;font-weight:600}
+.total{font-weight:700}
+.light{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;border-radius:9999px;padding:2px 10px;width:fit-content}
+.ok{background:#ecfdf5;color:#007a55;box-shadow:inset 0 0 0 1px #a4f4cf}
+.short{background:#fff1f2;color:#c70036;box-shadow:inset 0 0 0 1px #ffccd3}
+.lack{font-size:13px;color:#c70036}
+.btn{height:48px;border-radius:12px;font-weight:600;font-size:16px;display:flex;align-items:center;justify-content:center;width:100%;border:0;font-family:inherit}
+.primary{background:#4f39f6;color:#fff;box-shadow:0 1px 2px rgb(0 0 0/.08)}
+.disabled{opacity:.5}
+.hint{font-size:12px;color:#62748e;text-align:center}
+.notice{background:#f0f9ff;color:#0069a8;box-shadow:inset 0 0 0 1px #b8e6fe;border-radius:12px;padding:10px 12px;font-size:13px;display:flex;gap:8px}
+.empty{font-size:13px;color:#62748e;padding:2px 0 8px}
+svg{flex-shrink:0}
+</style>
+</head>
+<body>
+
+<div>
+<p class="cap"><b>Trạng thái chính:</b> Hàng đợi buổi sáng (Flow 1, bước 2–4): đơn đủ hàng, đơn thiếu hàng, các nhóm xếp dọc.</p>
+<div class="phone">
+  <div class="hdr">
+    <span class="logo">🏪</span><b>Khu nhân viên</b>
+    <span class="r">Hoa
+      <span class="icon-btn" aria-label="Làm mới"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></span>
+      <span style="opacity:.8">Đăng xuất</span></span>
+  </div>
+  <div class="wrap">
+    <h1>Hàng đợi</h1>
+
+    <div class="grp">Chờ xác nhận <span class="count">12</span></div>
+
+    <div class="card">
+      <div class="row"><span class="id">SL-20261120-4F9A2C</span><span class="wait">· Chờ 11 giờ</span><span class="badge b-pending">Chờ xác nhận</span></div>
+      <div class="row">
+        <div class="emo"><span style="background:linear-gradient(135deg,#e0f2fe,#c7d2fe)">🎧</span><span style="background:linear-gradient(135deg,#fef3c7,#fde68a)">⌨️</span></div>
+        <div class="meta"><b>Trần Minh</b> · 2 món</div><span class="total">1.250.000 ₫</span>
+      </div>
+      <span class="light ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Đủ hàng</span>
+      <button class="btn primary">Xác nhận</button>
+    </div>
+
+    <div class="card">
+      <div class="row"><span class="id">SL-20261120-9B21E0</span><span class="wait">· Chờ 9 giờ</span><span class="badge b-pending">Chờ xác nhận</span></div>
+      <div class="row">
+        <div class="emo"><span style="background:linear-gradient(135deg,#fce7f3,#fbcfe8)">🎙️</span></div>
+        <div class="meta"><b>Lê Thu Hà</b> · 2 món</div><span class="total">2.380.000 ₫</span>
+      </div>
+      <span class="light short"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>Thiếu hàng</span>
+      <p class="lack">Micro thu âm: cần 2, còn 1, thiếu 1</p>
+      <button class="btn primary disabled" disabled aria-describedby="h1">Xác nhận</button>
+      <p class="hint" id="h1">Không đủ hàng để xác nhận · Chạm vào đơn để hủy</p>
+    </div>
+
+    <div class="grp">Đã xác nhận <span class="count">3</span></div>
+    <div class="card">
+      <div class="row"><span class="id">SL-20261119-77C3D1</span><span class="wait">· Chờ 1 giờ</span><span class="badge b-confirmed">Đã xác nhận</span></div>
+      <div class="row"><div class="emo"><span style="background:linear-gradient(135deg,#dcfce7,#bbf7d0)">🖱️</span></div><div class="meta"><b>Phạm An Nhiên</b> · 1 món</div><span class="total">450.000 ₫</span></div>
+      <button class="btn primary">Bắt đầu giao</button>
+    </div>
+
+    <div class="grp">Đang giao <span class="count">0</span></div>
+    <p class="empty">Không có đơn</p>
+  </div>
+</div>
+</div>
+
+<div>
+<p class="cap"><b>Trạng thái thay thế:</b> Xung đột (Flow 1, trường hợp lỗi). An đã xác nhận trước; thẻ hiện thông báo rồi chuyển sang nhóm Đã xác nhận.</p>
+<div class="phone">
+  <div class="hdr"><span class="logo">🏪</span><b>Khu nhân viên</b><span class="r">Hoa <span style="opacity:.8">Đăng xuất</span></span></div>
+  <div class="wrap">
+    <h1>Hàng đợi</h1>
+    <div class="grp">Chờ xác nhận <span class="count">11</span></div>
+    <div class="card">
+      <div class="row"><span class="id">SL-20261120-A0F4B8</span><span class="wait">· Chờ 8 giờ</span><span class="badge b-pending">Chờ xác nhận</span></div>
+      <span class="light ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Đủ hàng</span>
+      <button class="btn primary disabled" disabled>Đang xác nhận…</button>
+    </div>
+    <div class="grp" style="margin-top:4px">Đã xác nhận <span class="count">4</span></div>
+    <div class="card">
+      <div class="notice" role="status"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>Đã xác nhận bởi An lúc 08:05</div>
+      <div class="row"><span class="id">SL-20261120-4F9A2C</span><span class="wait">· vừa xong</span><span class="badge b-confirmed">Đã xác nhận</span></div>
+      <div class="row"><div class="emo"><span style="background:linear-gradient(135deg,#e0f2fe,#c7d2fe)">🎧</span><span style="background:linear-gradient(135deg,#fef3c7,#fde68a)">⌨️</span></div><div class="meta"><b>Trần Minh</b> · 2 món</div><span class="total">1.250.000 ₫</span></div>
+      <button class="btn primary">Bắt đầu giao</button>
+    </div>
+  </div>
+</div>
+</div>
+
+</body>
+</html>

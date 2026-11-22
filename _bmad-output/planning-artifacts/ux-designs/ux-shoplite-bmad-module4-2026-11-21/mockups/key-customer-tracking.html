@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup · Trang theo dõi đơn (390px)</title>
+<style>
+/* Governed by: DESIGN.md Components (key-info-card, progress-step-done/todo/cancelled, card, status-badge-*), Typography key-figure
+   EXPERIENCE.md Component Patterns (Key info card, Progress stepper, Phần gập "Chi tiết đơn hàng"),
+   State Patterns (Đơn cancelled, Đơn cũ thiếu Mốc giờ), Key Flows Flow 2, Flow 3 bước 4. Spine wins on conflict. */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',sans-serif;background:#e2e8f0;color:#0f172b;font-size:14px;line-height:1.45;display:flex;gap:32px;justify-content:center;flex-wrap:wrap;padding:24px 12px}
+.cap{width:390px;font-size:12px;color:#45556c;margin-bottom:8px}
+.phone{width:390px;min-height:844px;background:#f8fafc;border-radius:28px;overflow:hidden;box-shadow:0 10px 30px rgb(0 0 0/.15);border:8px solid #0f172b}
+.hdr{height:64px;background:rgb(255 255 255/.9);border-bottom:1px solid #e2e8f0;display:flex;align-items:center;padding:0 16px;gap:8px}
+.logo{width:32px;height:32px;border-radius:8px;background:#4f39f6;display:flex;align-items:center;justify-content:center;font-size:16px}
+.nav{font-size:14px;color:#45556c;margin-left:8px}
+.cart{margin-left:auto;font-size:18px}
+.wrap{padding:16px;display:flex;flex-direction:column;gap:16px}
+.back{font-size:13px;color:#45556c;font-weight:500}
+h1{font-size:20px;font-weight:700}
+.sub{font-size:13px;color:#62748e;margin-top:2px}
+.card{background:#fff;border-radius:16px;box-shadow:0 1px 3px rgb(0 0 0/.1),0 1px 2px -1px rgb(0 0 0/.1);outline:1px solid #e2e8f0;padding:20px}
+.ki{display:flex;flex-direction:column;gap:14px}
+.ki .lbl{font-size:12px;color:#62748e}
+.ki .val{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px}
+.badge{font-size:12px;font-weight:600;border-radius:9999px;padding:2px 10px}
+.b-shipping{background:#eef2ff;color:#432dd7;box-shadow:inset 0 0 0 1px #c6d2ff}
+.b-cancelled{background:#f1f5f9;color:#62748e;box-shadow:inset 0 0 0 1px #e2e8f0}
+h2{font-size:16px;font-weight:600;margin-bottom:12px}
+ol{list-style:none}
+ol li{display:flex;gap:12px;position:relative;padding-bottom:16px}
+ol li:last-child{padding-bottom:0}
+ol li::before{content:"";position:absolute;left:5px;top:14px;bottom:-2px;width:2px;background:#e2e8f0}
+ol li.done::before{background:#4f39f6}
+ol li:last-child::before{display:none}
+.dot{width:12px;height:12px;border-radius:9999px;margin-top:4px;flex-shrink:0;background:#cad5e2;position:relative;z-index:1}
+.done .dot{background:#4f39f6}
+.cur .dot{background:#4f39f6;box-shadow:0 0 0 4px #e0e7ff}
+.can .dot{background:#ec003f}
+.st{font-weight:600}
+.todo .st{color:#90a1b9;font-weight:500}
+.can .st{color:#c70036}
+.t{font-size:12px;color:#62748e}
+details{background:#fff;border-radius:16px;outline:1px solid #e2e8f0;padding:16px 20px;box-shadow:0 1px 3px rgb(0 0 0/.1)}
+summary{font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div>
+<p class="cap"><b>Trạng thái chính:</b> Đơn Đang giao (Flow 2, anh Minh). Ba thông tin chính và thanh tiến trình nằm gọn trong màn hình đầu ở 390px.</p>
+<div class="phone">
+  <div class="hdr"><span class="logo">🏪</span><span class="nav">Sản phẩm · Đơn hàng</span><span class="cart">🛒</span></div>
+  <div class="wrap">
+    <span class="back">← Tất cả đơn hàng</span>
+    <div><h1>Đơn hàng SL-20261120-4F9A2C <span class="badge b-shipping">Đang giao</span></h1><p class="sub">Đặt lúc 20/11/2026 21:40</p></div>
+
+    <section class="card ki" aria-label="Thông tin chính">
+      <div><p class="lbl">Trạng thái</p><p class="val">Đang giao</p></div>
+      <div><p class="lbl">Dự kiến giao</p><p class="val">25–27/11</p></div>
+      <div><p class="lbl">Thanh toán</p><p class="val">Thanh toán khi nhận: 1.250.000 ₫</p></div>
+    </section>
+
+    <section class="card">
+      <h2>Tiến trình</h2>
+      <ol>
+        <li class="done"><span class="dot"></span><div><p class="st">Chờ xác nhận</p><p class="t">20/11 21:40</p></div></li>
+        <li class="done"><span class="dot"></span><div><p class="st">Đã xác nhận</p><p class="t">21/11 08:05</p></div></li>
+        <li class="cur" aria-current="step"><span class="dot"></span><div><p class="st">Đang giao</p><p class="t">21/11 15:30</p></div></li>
+        <li class="todo"><span class="dot"></span><div><p class="st">Đã giao</p></div></li>
+      </ol>
+    </section>
+
+    <details><summary>Chi tiết đơn hàng</summary></details>
+  </div>
+</div>
+</div>
+
+<div>
+<p class="cap"><b>Trạng thái thay thế:</b> Đơn Đã hủy (Flow 3, bước 4). Dòng Dự kiến giao bị ẩn; tiến trình kết thúc ở bước hủy kèm lý do. Đơn cũ thiếu Mốc giờ hiện "—".</p>
+<div class="phone">
+  <div class="hdr"><span class="logo">🏪</span><span class="nav">Sản phẩm · Đơn hàng</span><span class="cart">🛒</span></div>
+  <div class="wrap">
+    <span class="back">← Tất cả đơn hàng</span>
+    <div><h1>Đơn hàng SL-20261119-77C3D1 <span class="badge b-cancelled">Đã hủy</span></h1><p class="sub">Đặt lúc 19/11/2026 10:12</p></div>
+    <section class="card ki" aria-label="Thông tin chính">
+      <div><p class="lbl">Trạng thái</p><p class="val">Đã hủy</p></div>
+      <div><p class="lbl">Thanh toán</p><p class="val">Chuyển khoản: 450.000 ₫</p></div>
+    </section>
+    <section class="card">
+      <h2>Tiến trình</h2>
+      <ol>
+        <li class="done"><span class="dot"></span><div><p class="st">Chờ xác nhận</p><p class="t">19/11 10:12</p></div></li>
+        <li class="done"><span class="dot"></span><div><p class="st">Đã xác nhận</p><p class="t">—</p></div></li>
+        <li class="can" aria-current="step"><span class="dot"></span><div><p class="st">Đã hủy</p><p class="t">21/11 09:20 · Khách đổi ý</p></div></li>
+      </ol>
+    </section>
+    <details><summary>Chi tiết đơn hàng</summary></details>
+  </div>
+</div>
+</div>
+
+</body>
+</html>
