@@ -19,7 +19,10 @@ export interface StateMutation<T> {
 export interface OrderRepository {
   findAll(): Promise<Order[]>;
   findById(id: string): Promise<Order | null>;
-  /** Thêm mới hoặc cập nhật (theo id). Production chỉ dùng để thêm đơn mới. */
+  /**
+   * Thêm mới hoặc cập nhật (upsert theo id). Chỉ dùng để dựng dữ liệu trong test và script;
+   * production thêm đơn qua `update` (insert-only, Story 1.6).
+   */
   save(order: Order): Promise<void>;
   /** Bản sao toàn bộ trạng thái hiện tại. */
   readState(): Promise<ShopState>;
@@ -88,14 +91,25 @@ export interface ShopRepositoryDeps extends ShopStateFileDeps {
   initialize?: () => Promise<ShopState>;
   /** PID lock `<file>.lock` (AD-5), lấy lười ở lần truy cập đầu. Mặc định bật. */
   lock?: boolean | ProcessLockDeps;
+  /**
+   * Chuẩn hóa trạng thái vừa nạp, trong mutex (ví dụ thêm key tồn kho cho sản phẩm mới, AD-9).
+   * Kết quả được ghi xuống ở lần `update` kế tiếp.
+   */
+  reconcile?: (state: ShopState) => ShopState;
 }
 
 /** File trạng thái chung `ShopState` (AD-3, AD-4). Tạo repository không đụng đĩa. */
 export function createJsonFileShopRepository(
   filePath: string,
-  { initialize, lock = true, ...fileDeps }: ShopRepositoryDeps = {},
+  { initialize, lock = true, reconcile = (state) => state, ...fileDeps }: ShopRepositoryDeps = {},
 ): OrderRepository {
   const file = createShopStateFile(filePath, fileDeps);
+  /** `reconcile` chạy trong mutex; kết quả được kiểm schema và bất biến ngay, kể cả khi chỉ đọc. */
+  const reconciled = (state: ShopState): ShopState => {
+    const next = parseShopState(reconcile(state));
+    assertShopStateInvariants(next);
+    return next;
+  };
   // Lock dùng cùng quy tắc khóa (platform) với mutex của file.
   const lockDeps =
     lock === false ? false : { platform: fileDeps.platform, ...(lock === true ? {} : lock) };
@@ -105,9 +119,10 @@ export function createJsonFileShopRepository(
     async load() {
       if (lockDeps) await acquireStoreLock(filePath, lockDeps);
       const existing = await file.read();
-      if (existing) return existing;
-      if (!initialize) return emptyShopState();
-      const state = await initialize();
+      if (existing) return reconciled(existing);
+      if (!initialize) return reconciled(emptyShopState());
+      // Chuẩn hóa trước khi ghi lần đầu, để file và bộ nhớ giống nhau ngay từ đầu.
+      const state = reconciled(await initialize());
       await file.commit(state);
       return state;
     },

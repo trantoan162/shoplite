@@ -63,4 +63,33 @@ describe("server.ts — orderService production", () => {
     );
     expect(await readFile(ordersFile)).toEqual(before);
   });
+
+  it("store đã có nhưng thiếu key của sản phẩm catalog: reconcile thêm key và ghi xuống ở lần update", async () => {
+    const levels = Object.fromEntries(
+      products.filter((p) => p.id !== "p010").map((p) => [p.id, p.stock]),
+    );
+    await writeFile(
+      storeFile,
+      JSON.stringify({
+        schemaVersion: 1,
+        orders: [],
+        inventory: levels,
+        inventoryBaseline: levels,
+      }),
+      "utf8",
+    );
+    const declared = products.find((p) => p.id === "p010")!.stock;
+    const { orderService } = await import("./server");
+
+    await orderService.placeOrder({
+      customer: { fullName: "Khách mới", phone: "0987654321", address: "45 Lê Lợi, Đà Nẵng" },
+      shippingMethod: "standard",
+      paymentMethod: "cod",
+      items: [{ productId: "p001", quantity: 1 }],
+    });
+
+    const store = JSON.parse(await readFile(storeFile, "utf8"));
+    expect(store.inventory.p010).toBe(declared);
+    expect(store.inventoryBaseline.p010).toBe(declared);
+  });
 });

@@ -21,3 +21,6 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-3-co-lap-du-lieu-e2e.md`
   summary: Còn 7 advisory moderate ở dev dependency (typescript-eslint, minimatch) — `npm audit fix` khi tiện.
   evidence: npm audit sau khi nâng Next: moderate 7, high 0, critical 0; đều là công cụ lint, không chạy lúc runtime.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-6-dat-hang-kiem-ton-kho.md`
+  summary: (Đã xử lý 2026-11-22) `placeOrder` chèn đơn kiểu insert-only và thử lại khi mã đơn trùng.
+  evidence: Mục do Story 1.2 hoãn lại; đã xử lý trong mutator của Story 1.6, có test.

@@ -1,4 +1,5 @@
 import { products } from "@/data/products";
+import { reconcileInventoryKeys } from "@/features/inventory/stock";
 import {
   createJsonFileShopRepository,
   DEFAULT_ORDERS_FILE,
@@ -24,5 +25,6 @@ export const orderService = createOrderService({
         await importLegacyOrders(process.env.ORDERS_FILE || DEFAULT_ORDERS_FILE),
         products,
       ),
+    reconcile: (state) => reconcileInventoryKeys(state, products),
   }),
 });

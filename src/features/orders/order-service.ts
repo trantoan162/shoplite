@@ -2,6 +2,7 @@ import { getProductById } from "@/features/catalog/catalog-service";
 import type { Product } from "@/features/catalog/types";
 import { placeOrderSchema, toFieldErrors } from "@/features/checkout/checkout-schema";
 import { calculateOrderTotals } from "@/features/checkout/pricing";
+import { availableStock, declaredStock } from "@/features/inventory/stock";
 import { OrderError } from "./order-errors";
 import type { OrderRepository } from "./order-repository";
 import type { Order, OrderItem } from "./types";
@@ -45,6 +46,19 @@ export function createOrderService({
     return order;
   }
 
+  /**
+   * Mã đơn chưa dùng: thử lại vài lần nếu `generateId` sinh trùng; chỉ chèn mới, không bao giờ
+   * ghi đè đơn khác.
+   */
+  function uniqueOrderId(date: Date, existing: Order[]): string {
+    const used = new Set(existing.map((order) => order.id));
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const id = generateId(date);
+      if (!used.has(id)) return id;
+    }
+    throw new Error("Không sinh được mã đơn chưa dùng sau 5 lần thử");
+  }
+
   return {
     /**
      * Tạo đơn hàng mới từ payload của client.
@@ -64,55 +78,61 @@ export function createOrderService({
 
       const { customer, items, shippingMethod, paymentMethod } = parsed.data;
 
-      const orderItems: OrderItem[] = mergeItems(items).map(({ productId, quantity }) => {
-        const product = findProduct(productId);
-        if (!product) {
-          throw new OrderError("PRODUCT_NOT_FOUND", `Không tìm thấy sản phẩm "${productId}"`);
-        }
-        if (quantity > product.stock) {
-          throw new OrderError(
-            "INSUFFICIENT_STOCK",
-            product.stock === 0
-              ? `Sản phẩm "${product.name}" đã hết hàng`
-              : `Sản phẩm "${product.name}" chỉ còn ${product.stock} sản phẩm`,
-          );
-        }
-        return {
-          productId: product.id,
-          slug: product.slug,
-          name: product.name,
-          image: product.image,
-          unitPrice: product.price,
-          quantity,
-          lineTotal: product.price * quantity,
-        };
-      });
-
       const createdAt = now();
       const createdAtIso = createdAt.toISOString();
-      const order: Order = {
-        id: generateId(createdAt),
-        status: "pending",
-        createdAt: createdAtIso,
-        updatedAt: createdAtIso,
-        customer: {
-          fullName: customer.fullName,
-          phone: customer.phone,
-          email: customer.email || undefined,
-          address: customer.address,
-          note: customer.note || undefined,
-        },
-        shippingMethod,
-        paymentMethod,
-        items: orderItems,
-        ...calculateOrderTotals(orderItems, shippingMethod),
-        statusHistory: [
-          { from: null, to: "pending", at: createdAtIso, actor: { kind: "customer" } },
-        ],
-      };
 
-      await repository.save(order);
-      return order;
+      // Tra sản phẩm, kiểm tra tồn kho lưu bền và chèn đơn trong cùng một lần giữ khóa (AD-4, AD-9).
+      // Thứ tự kiểm tra giữ như cũ: từng dòng (đã gộp) lần lượt "có sản phẩm" rồi "đủ hàng".
+      // Đặt hàng không trừ kho (FR-3).
+      return repository.update((state) => {
+        const orderItems: OrderItem[] = mergeItems(items).map(({ productId, quantity }) => {
+          const product = findProduct(productId);
+          if (!product) {
+            throw new OrderError("PRODUCT_NOT_FOUND", `Không tìm thấy sản phẩm "${productId}"`);
+          }
+          const available = availableStock(state.inventory, product.id, declaredStock(product));
+          if (quantity > available) {
+            throw new OrderError(
+              "INSUFFICIENT_STOCK",
+              available === 0
+                ? `Sản phẩm "${product.name}" đã hết hàng`
+                : `Sản phẩm "${product.name}" chỉ còn ${available} sản phẩm`,
+            );
+          }
+          return {
+            productId: product.id,
+            slug: product.slug,
+            name: product.name,
+            image: product.image,
+            unitPrice: product.price,
+            quantity,
+            lineTotal: product.price * quantity,
+          };
+        });
+
+        const order: Order = {
+          id: uniqueOrderId(createdAt, state.orders),
+          status: "pending",
+          createdAt: createdAtIso,
+          updatedAt: createdAtIso,
+          customer: {
+            fullName: customer.fullName,
+            phone: customer.phone,
+            email: customer.email || undefined,
+            address: customer.address,
+            note: customer.note || undefined,
+          },
+          shippingMethod,
+          paymentMethod,
+          items: orderItems,
+          ...calculateOrderTotals(orderItems, shippingMethod),
+          statusHistory: [
+            { from: null, to: "pending", at: createdAtIso, actor: { kind: "customer" } },
+          ],
+        };
+        state.orders.push(order);
+        return { state, result: order };
+      });
     },
 
     /** Danh sách đơn hàng, mới nhất trước. */
