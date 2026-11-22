@@ -110,6 +110,7 @@ jobs:
           claude_code_oauth_token: ${{ secrets.KHOAHOCAI2 }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           path_to_claude_code_executable: ${{ vars.RUNNER_AI && '/home/runner/.local/bin/claude' || '' }}
+          show_full_output: true
           prompt: |
             /bmad-code-review provided diff .ci/pr.diff, spec .ci/spec.md
 
