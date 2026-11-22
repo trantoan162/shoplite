@@ -2,6 +2,7 @@ import { getProductById } from "@/features/catalog/catalog-service";
 import type { Product } from "@/features/catalog/types";
 import { placeOrderSchema, toFieldErrors } from "@/features/checkout/checkout-schema";
 import { calculateOrderTotals } from "@/features/checkout/pricing";
+import { availableStock, declaredStock } from "@/features/inventory/stock";
 import { OrderError } from "./order-errors";
 import type { OrderRepository } from "./order-repository";
 import type { Order, OrderItem } from "./types";
@@ -29,6 +30,10 @@ function mergeItems(items: { productId: string; quantity: number }[]) {
   return [...merged.entries()].map(([productId, quantity]) => ({ productId, quantity }));
 }
 
+function orderNotFound(id: string): OrderError {
+  return new OrderError("ORDER_NOT_FOUND", `Không tìm thấy đơn hàng "${id}"`);
+}
+
 export function createOrderService({
   repository,
   findProduct = getProductById,
@@ -37,10 +42,21 @@ export function createOrderService({
 }: OrderServiceDeps) {
   async function getOrder(id: string): Promise<Order> {
     const order = await repository.findById(id);
-    if (!order) {
-      throw new OrderError("ORDER_NOT_FOUND", `Không tìm thấy đơn hàng "${id}"`);
-    }
+    if (!order) throw orderNotFound(id);
     return order;
+  }
+
+  /**
+   * Mã đơn chưa dùng: thử lại vài lần nếu `generateId` sinh trùng; chỉ chèn mới, không bao giờ
+   * ghi đè đơn khác.
+   */
+  function uniqueOrderId(date: Date, existing: Order[]): string {
+    const used = new Set(existing.map((order) => order.id));
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const id = generateId(date);
+      if (!used.has(id)) return id;
+    }
+    throw new Error("Không sinh được mã đơn chưa dùng sau 5 lần thử");
   }
 
   return {
@@ -62,51 +78,61 @@ export function createOrderService({
 
       const { customer, items, shippingMethod, paymentMethod } = parsed.data;
 
-      const orderItems: OrderItem[] = mergeItems(items).map(({ productId, quantity }) => {
-        const product = findProduct(productId);
-        if (!product) {
-          throw new OrderError("PRODUCT_NOT_FOUND", `Không tìm thấy sản phẩm "${productId}"`);
-        }
-        if (quantity > product.stock) {
-          throw new OrderError(
-            "INSUFFICIENT_STOCK",
-            product.stock === 0
-              ? `Sản phẩm "${product.name}" đã hết hàng`
-              : `Sản phẩm "${product.name}" chỉ còn ${product.stock} sản phẩm`,
-          );
-        }
-        return {
-          productId: product.id,
-          slug: product.slug,
-          name: product.name,
-          image: product.image,
-          unitPrice: product.price,
-          quantity,
-          lineTotal: product.price * quantity,
-        };
-      });
-
       const createdAt = now();
-      const order: Order = {
-        id: generateId(createdAt),
-        status: "pending",
-        createdAt: createdAt.toISOString(),
-        updatedAt: createdAt.toISOString(),
-        customer: {
-          fullName: customer.fullName,
-          phone: customer.phone,
-          email: customer.email || undefined,
-          address: customer.address,
-          note: customer.note || undefined,
-        },
-        shippingMethod,
-        paymentMethod,
-        items: orderItems,
-        ...calculateOrderTotals(orderItems, shippingMethod),
-      };
+      const createdAtIso = createdAt.toISOString();
 
-      await repository.save(order);
-      return order;
+      // Tra sản phẩm, kiểm tra tồn kho lưu bền và chèn đơn trong cùng một lần giữ khóa (AD-4, AD-9).
+      // Thứ tự kiểm tra giữ như cũ: từng dòng (đã gộp) lần lượt "có sản phẩm" rồi "đủ hàng".
+      // Đặt hàng không trừ kho (FR-3).
+      return repository.update((state) => {
+        const orderItems: OrderItem[] = mergeItems(items).map(({ productId, quantity }) => {
+          const product = findProduct(productId);
+          if (!product) {
+            throw new OrderError("PRODUCT_NOT_FOUND", `Không tìm thấy sản phẩm "${productId}"`);
+          }
+          const available = availableStock(state.inventory, product.id, declaredStock(product));
+          if (quantity > available) {
+            throw new OrderError(
+              "INSUFFICIENT_STOCK",
+              available === 0
+                ? `Sản phẩm "${product.name}" đã hết hàng`
+                : `Sản phẩm "${product.name}" chỉ còn ${available} sản phẩm`,
+            );
+          }
+          return {
+            productId: product.id,
+            slug: product.slug,
+            name: product.name,
+            image: product.image,
+            unitPrice: product.price,
+            quantity,
+            lineTotal: product.price * quantity,
+          };
+        });
+
+        const order: Order = {
+          id: uniqueOrderId(createdAt, state.orders),
+          status: "pending",
+          createdAt: createdAtIso,
+          updatedAt: createdAtIso,
+          customer: {
+            fullName: customer.fullName,
+            phone: customer.phone,
+            email: customer.email || undefined,
+            address: customer.address,
+            note: customer.note || undefined,
+          },
+          shippingMethod,
+          paymentMethod,
+          items: orderItems,
+          ...calculateOrderTotals(orderItems, shippingMethod),
+          statusHistory: [
+            { from: null, to: "pending", at: createdAtIso, actor: { kind: "customer" } },
+          ],
+        };
+        state.orders.push(order);
+        return { state, result: order };
+      });
     },
 
     /** Danh sách đơn hàng, mới nhất trước. */
@@ -119,16 +145,32 @@ export function createOrderService({
 
     /** Khách hàng chỉ được hủy đơn khi đơn còn ở trạng thái "Chờ xác nhận". */
     async cancelOrder(id: string): Promise<Order> {
-      const order = await getOrder(id);
-      if (order.status !== "pending") {
-        throw new OrderError(
-          "INVALID_STATUS_TRANSITION",
-          "Chỉ có thể hủy đơn hàng đang ở trạng thái Chờ xác nhận",
-        );
-      }
-      const cancelled: Order = { ...order, status: "cancelled", updatedAt: now().toISOString() };
-      await repository.save(cancelled);
-      return cancelled;
+      // Kiểm tra và ghi trong cùng một lần giữ khóa: không quyết định trên bản đọc cũ (AD-4, AD-8).
+      return repository.update((state) => {
+        const index = state.orders.findIndex((order) => order.id === id);
+        if (index < 0) throw orderNotFound(id);
+        const order = state.orders[index];
+        if (order.status !== "pending") {
+          throw new OrderError(
+            "INVALID_STATUS_TRANSITION",
+            "Chỉ có thể hủy đơn hàng đang ở trạng thái Chờ xác nhận",
+          );
+        }
+        // Lấy thời điểm khi đã giữ khóa, để updatedAt theo đúng thứ tự commit.
+        const at = now().toISOString();
+        const cancelled: Order = {
+          ...order,
+          status: "cancelled",
+          updatedAt: at,
+          // Đơn cũ không có lịch sử: chỉ thêm dòng hủy, không bịa dòng tạo đơn (FR-18).
+          statusHistory: [
+            ...(order.statusHistory ?? []),
+            { from: order.status, to: "cancelled", at, actor: { kind: "customer" } },
+          ],
+        };
+        state.orders[index] = cancelled;
+        return { state, result: cancelled };
+      });
     },
   };
 }

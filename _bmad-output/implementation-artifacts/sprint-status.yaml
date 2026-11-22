@@ -1,0 +1,80 @@
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created, ready for development
+#   - in-progress: Developer actively working on implementation
+#   - review: Implementation complete, ready for review
+#   - done: Story completed
+
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when its first story starts (via build's sprint sync)
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates the next story after the previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; the status view surfaces open ones
+generated: 11-21-2026 14:30
+last_updated: 11-22-2026 12:45
+project: shoplite-bmad-module4
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+development_status:
+  epic-1: in-progress
+  1-1-kho-trạng-thái-một-file-ghi-nguyên-tử: review
+  1-2-khóa-chung-cho-đọc-ghi-đặt-và-hủy-đơn-không-đè-nhau: review
+  1-3-cô-lập-dữ-liệu-khi-chạy-e2e: review
+  1-4-chuyển-sang-file-trạng-thái-giữ-đơn-cũ-chỉ-một-tiến-trình: review
+  1-5-mô-hình-order-ghi-lịch-sử-từ-ngày-đầu: review
+  1-6-đặt-hàng-kiểm-tra-tồn-kho-lưu-bền: review
+  1-7-cửa-hàng-hiển-thị-tồn-kho-thật: review
+  1-8-chủ-shop-đặt-lại-tồn-kho-bằng-lệnh: review
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-cấu-hình-nhân-viên-và-phiên-đăng-nhập-có-ký: backlog
+  2-2-đăng-nhập-đăng-xuất-và-chống-dò-pin: backlog
+  2-3-trang-đăng-nhập-pin-và-bảo-vệ-route-staff: backlog
+  2-4-khung-khu-nhân-viên-tách-khỏi-cửa-hàng: backlog
+  2-5-hàng-đợi-chỉ-đọc-có-đèn-tồn-kho: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-xác-nhận-đơn-trừ-kho-nguyên-tử-từ-chối-thao-tác-lặp: backlog
+  3-2-hủy-đơn-kèm-lý-do-hoàn-kho-giao-thất-bại: backlog
+  3-3-api-chuyển-trạng-thái-cho-nhân-viên: backlog
+  3-4-một-chạm-xác-nhận-bắt-đầu-giao-đã-giao-trên-hàng-đợi: backlog
+  3-5-chi-tiết-đơn-cho-nhân-viên: backlog
+  3-6-hộp-hủy-inline-với-lý-do-bắt-buộc: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-dữ-liệu-công-khai-cho-khách-không-lộ-thông-tin-nội-bộ: backlog
+  4-2-tính-ngày-dự-kiến-giao-và-trạng-thái-thanh-toán: backlog
+  4-3-ba-thông-tin-chính-ở-màn-hình-đầu: backlog
+  4-4-thanh-tiến-trình-có-mốc-giờ-thật-cho-khách: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-lịch-sử-trạng-thái-của-đơn: backlog
+  5-2-sổ-kho-để-đối-soát-tồn-kho: backlog
+  5-3-bộ-đếm-đơn-và-hàng-sắp-hết: backlog
+  5-4-khách-gửi-yêu-cầu-hủy-đơn-đã-xác-nhận: backlog
+  5-5-nhân-viên-duyệt-hoặc-từ-chối-yêu-cầu-hủy: backlog
+  5-6-cảnh-báo-đơn-đứng-yên: backlog
+  epic-5-retrospective: optional

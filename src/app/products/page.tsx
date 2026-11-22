@@ -12,12 +12,16 @@ import {
   parseCatalogQuery,
   queryProducts,
 } from "@/features/catalog/catalog-service";
+import { getLiveProducts } from "@/features/orders/server";
 
 export const metadata: Metadata = { title: "Sản phẩm" };
 
+// Hiển thị tồn kho thật và lọc "còn hàng" theo tồn kho lưu bền (AD-9).
+export const dynamic = "force-dynamic";
+
 export default async function ProductsPage({ searchParams }: PageProps<"/products">) {
   const query = parseCatalogQuery(await searchParams);
-  const result = queryProducts(query);
+  const result = queryProducts(query, await getLiveProducts());
   const category = query.category ? getCategoryBySlug(query.category) : undefined;
 
   return (

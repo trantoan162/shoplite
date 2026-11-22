@@ -1,0 +1,311 @@
+<title>Kiến trúc vận hành đơn ShopLite</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: một cột đọc ~72ch, các "phiếu kho" (ticket) cho quyết định, sơ đồ mermaid trong khung cuộn ngang riêng */
+:root{
+  --bg:#f5f6fb; --surface:#ffffff; --ink:#141a33; --muted:#5b6585; --line:#dde1ee;
+  --accent:#4f39f6; --accent-soft:#eceaff; --ok:#007a55; --ok-soft:#e3f7ee; --bad:#c70036; --bad-soft:#ffe9ed; --warn:#9a4a00; --warn-soft:#fff3dc;
+  --display:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,'Cascadia Code',Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1222; --surface:#161b30; --ink:#e7e9f5; --muted:#99a2c2; --line:#2a3150;
+  --accent:#9c8cff; --accent-soft:#25214a; --ok:#4fd6a0; --ok-soft:#10301f; --bad:#ff7d97; --bad-soft:#3a1420; --warn:#ffbe66; --warn-soft:#352610; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1222; --surface:#161b30; --ink:#e7e9f5; --muted:#99a2c2; --line:#2a3150;
+  --accent:#9c8cff; --accent-soft:#25214a; --ok:#4fd6a0; --ok-soft:#10301f; --bad:#ff7d97; --bad-soft:#3a1420; --warn:#ffbe66; --warn-soft:#352610; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;margin:0}
+.wrap{max-width:860px;margin:0 auto;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:56px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.25}
+h1{font-size:clamp(1.9rem,4.5vw,2.7rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.45rem;font-weight:700}
+h3{font-size:1.05rem;font-weight:700}
+p{margin:0;max-width:68ch}
+code,.mono{font-family:var(--mono);font-size:.86em}
+code{background:var(--accent-soft);color:var(--ink);padding:.05em .35em;border-radius:4px}
+.eyebrow{font-family:var(--mono);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600}
+header{display:flex;flex-direction:column;gap:14px}
+.lede{font-size:1.12rem;color:var(--muted)}
+.meta{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--mono);font-size:.75rem;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--muted);background:var(--surface)}
+section{display:flex;flex-direction:column;gap:18px}
+.principle{border-left:4px solid var(--accent);padding:14px 18px;background:var(--surface);font-size:1.08rem;font-weight:600;max-width:68ch}
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;overflow-x:auto}
+.diagram pre{margin:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.ticket{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.ticket .id{font-family:var(--mono);font-size:.78rem;color:var(--accent);font-weight:600}
+.ticket p{font-size:.95rem;color:var(--muted)}
+.tag{display:inline-block;font-family:var(--mono);font-size:.68rem;padding:1px 7px;border-radius:4px;background:var(--ok-soft);color:var(--ok);margin-left:6px;vertical-align:middle}
+/* Simulator */
+.sim{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:16px}
+.sim-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font-family:var(--body);font-size:.92rem;font-weight:600;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;cursor:pointer;min-height:40px}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.lanes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.lanes{grid-template-columns:1fr}}
+.lane{border:1px dashed var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.lane h4{margin:0;font-size:.9rem}
+.step{font-size:.86rem;padding:6px 8px;border-radius:6px;background:var(--bg);color:var(--muted)}
+.step.now{background:var(--accent-soft);color:var(--ink);font-weight:600}
+.step.okk{background:var(--ok-soft);color:var(--ok);font-weight:600}
+.step.err{background:var(--bad-soft);color:var(--bad);font-weight:600}
+.state{display:flex;flex-wrap:wrap;gap:10px;font-family:var(--mono);font-size:.85rem;font-variant-numeric:tabular-nums}
+.state span{border:1px solid var(--line);border-radius:6px;padding:4px 10px;background:var(--bg)}
+.state .bad{border-color:var(--bad);color:var(--bad);background:var(--bad-soft)}
+.caption{font-size:.9rem;color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+tr:last-child td{border-bottom:0}
+.code-409{color:var(--bad);font-family:var(--mono);font-weight:600}
+.code-400{color:var(--warn);font-family:var(--mono);font-weight:600}
+.code-200{color:var(--ok);font-family:var(--mono);font-weight:600}
+ol.flow{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;max-width:68ch}
+.open{background:var(--warn-soft);border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+.open ul{margin:6px 0 0;padding-left:1.2em}
+footer{font-size:.85rem;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">Architecture spine · ShopLite · 21/11/2026</span>
+  <h1>Xác nhận đơn và trừ kho là một việc</h1>
+  <p class="lede">Trang này giải thích kiến trúc của tính năng vận hành đơn hàng: cách đơn và tồn kho được ghi cùng lúc trên một file JSON, vì sao hai nhân viên bấm cùng lúc không thể trừ kho hai lần, và những chỗ code hiện có phải đổi.</p>
+  <div class="meta">
+    <span class="chip">Next 16.4.2</span><span class="chip">React 19.3</span><span class="chip">Zod 4</span><span class="chip">Node ≥ 22.12</span><span class="chip">1 tiến trình · file JSON · không DB</span><span class="chip">AD-1 … AD-19</span>
+  </div>
+</header>
+
+<section>
+  <span class="eyebrow">Vấn đề</span>
+  <h2>Hôm nay mỗi lần lưu là đọc cả file, sửa, ghi lại, không khóa</h2>
+  <p><code>order-repository.ts</code> ghi an toàn từng lần (file tạm rồi <code>rename</code>), nhưng hai request chạy xen nhau sẽ cùng đọc bản cũ và bản ghi sau đè mất thay đổi của bản trước. Khi thêm tồn kho, lỗi này biến thành oversell: hai người cùng xác nhận món cuối và cả hai đều thấy "còn 1".</p>
+  <p class="principle">Nguyên tắc: kiểm tra trạng thái, kiểm tra kho, trừ kho và ghi lịch sử nằm trong một hàm thuần, chạy trong một khóa, và được ghi bằng một lần <code>rename</code>.</p>
+</section>
+
+<section aria-labelledby="sim-title">
+  <span class="eyebrow">Thử tay</span>
+  <h2 id="sim-title">An và Hoa cùng bấm "Xác nhận" đơn SL-…-4F9A2C</h2>
+  <p class="caption">Đơn cần Micro thu âm ×1, kho còn 1. Chọn cách lưu rồi bấm "Bước tiếp" để xem từng thao tác.</p>
+  <div class="sim">
+    <div class="sim-controls" role="group" aria-label="Cách lưu">
+      <button id="mode-old" aria-pressed="true" type="button">Code hiện tại: không khóa</button>
+      <button id="mode-new" aria-pressed="false" type="button">Spine: mutex + CAS</button>
+      <span style="flex:1"></span>
+      <button id="btn-reset" type="button">Làm lại</button>
+      <button id="btn-step" class="primary" type="button">Bước tiếp</button>
+    </div>
+    <div class="lanes">
+      <div class="lane"><h4>Request của An</h4><div id="lane-a"></div></div>
+      <div class="lane"><h4>Request của Hoa</h4><div id="lane-h"></div></div>
+    </div>
+    <div class="state" aria-live="polite" id="state"></div>
+    <p class="caption" id="verdict" role="status"></p>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Luồng một lần xác nhận</span>
+  <h2>Từ nút bấm tới file trên đĩa</h2>
+  <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  participant UI as Thẻ đơn (client)
+  participant H as Route handler staff
+  participant R as OrderRepository.update (mutex)
+  participant F as shop-store.json
+  UI->>H: POST {from: pending, to: confirmed}
+  H->>H: requireStaff() lấy tên từ cookie
+  H->>R: mutator thuần
+  R->>F: đọc (trong khóa)
+  R->>R: cặp hợp lệ, CAS from, thiếu hàng?, trừ kho, ghi lịch sử
+  alt hợp lệ
+    R->>F: .tmp, sync, rename
+    R-->>UI: 200 Order
+  else đã bị người khác xử lý hoặc thiếu hàng
+    R-->>UI: 409, không ghi gì
+  end
+  UI->>UI: router.refresh()
+  </pre></div>
+  <ol class="flow">
+    <li>Nút không cập nhật trước. Giao diện chỉ đổi khi server trả về (AD-18).</li>
+    <li>Tên người thao tác lấy từ cookie đã ký, không bao giờ từ body (AD-13).</li>
+    <li>Mutator đồng bộ: không có <code>await</code> nào giữa lúc đọc và lúc ghi (AD-4).</li>
+    <li>Ném lỗi ở bất kỳ bước nào thì file giữ nguyên. Đó là toàn bộ cơ chế "không có trạng thái nửa vời" (AD-3, AD-6).</li>
+  </ol>
+</section>
+
+<section>
+  <span class="eyebrow">Chọn phương án ghi</span>
+  <h2>Ba phương án của addendum, chọn phương án 1</h2>
+  <div class="tablebox"><table>
+    <thead><tr><th>Phương án</th><th>Nguyên tử khi chết giữa chừng</th><th>Kết luận</th></tr></thead>
+    <tbody>
+      <tr><td>1. Một file chung (đơn + kho) + mutex</td><td>Có: một lần <code>rename</code></td><td><strong>Chọn.</strong> Giữ interface <code>OrderRepository</code> bằng cách thêm <code>readState</code> và <code>update</code></td></tr>
+      <tr><td>2. Hai file + mutex chung</td><td>Không: chết giữa hai lần ghi là lệch</td><td>Loại, vì phải tự viết khôi phục</td></tr>
+      <tr><td>3. Sổ kho là nguồn sự thật</td><td>Có, nếu cùng file</td><td>Không chọn làm nguồn; Sổ kho (SHOULD) vẫn nằm trong file chung</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <span class="eyebrow">Mã lỗi</span>
+  <h2>Thứ tự kiểm tra cố định</h2>
+  <p>Cùng một tình huống luôn ra cùng một mã. Lỗi ở bước sớm thì các bước sau không chạy.</p>
+  <div class="tablebox"><table>
+    <thead><tr><th>#</th><th>Kiểm tra</th><th>Mã</th><th>Ví dụ thông điệp</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Body sai shape</td><td class="code-400">400 VALIDATION_ERROR</td><td>Thông tin không hợp lệ</td></tr>
+      <tr><td>2</td><td>Không có đơn</td><td class="code-409">404 ORDER_NOT_FOUND</td><td>Không tìm thấy đơn hàng</td></tr>
+      <tr><td>3</td><td>Cặp từ → sang không có trong bảng</td><td class="code-409">409 INVALID_STATUS_TRANSITION</td><td>Không thể chuyển từ Đã giao sang Chờ xác nhận</td></tr>
+      <tr><td>4</td><td>Trạng thái hiện tại khác "từ"</td><td class="code-409">409 INVALID_STATUS_TRANSITION</td><td>Đã xác nhận bởi An lúc 08:05</td></tr>
+      <tr><td>5</td><td>Thiếu lý do hủy</td><td class="code-400">400 VALIDATION_ERROR</td><td>Vui lòng chọn lý do hủy</td></tr>
+      <tr><td>6</td><td>Thiếu hàng</td><td class="code-409">409 INSUFFICIENT_STOCK</td><td>Micro thu âm: cần 2, còn 1, thiếu 1</td></tr>
+      <tr><td>✓</td><td>Ghi xong</td><td class="code-200">200</td><td>Order mới</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <span class="eyebrow">Tồn kho lưu bền</span>
+  <h2>Catalog vẫn đồng bộ, tồn kho được phủ lên ở server</h2>
+  <p>Tên, giá, mô tả vẫn là hằng số trong <code>products.ts</code>. Chỉ con số <code>stock</code> được lấy từ file trạng thái rồi phủ lên bản sao sản phẩm trước khi gọi hàm catalog. Nhờ vậy test catalog và giỏ hàng không phải đổi.</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart LR
+  P["products.ts (tĩnh)"] --> W["withLiveStock(products, inventory)"]
+  S["shop-store.json: inventory"] --> W
+  W --> C["catalog-service (đồng bộ, nhận source)"]
+  C --> A["/api/products, /, /products, /products/[slug]"]
+  S --> L["getStockLight(order, inventory)"]
+  L --> Q["Hàng đợi, Chi tiết đơn"]
+  </pre></div>
+  <div class="grid2">
+    <div class="ticket"><span class="id">Chỗ phải đổi</span><p>Trang <code>/</code>, <code>/products</code>, <code>/products/[slug]</code> chuyển sang <code>force-dynamic</code>; trang chi tiết bỏ <code>generateStaticParams</code>.</p></div>
+    <div class="ticket"><span class="id">placeOrder</span><p>Vẫn chỉ kiểm tra, không trừ kho. Phép kiểm tra chạy trong khóa trên tồn kho thật, giữ nguyên thông điệp cũ.</p></div>
+    <div class="ticket"><span class="id">Khởi tạo</span><p>Lần chạy đầu ghi đủ tồn kho từ <code>products.ts</code> và nhập đơn cũ từ <code>orders.json</code>. Sau đó muốn đổi kho thì dùng <code>npm run stock:set</code>.</p></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Nhân viên</span>
+  <h2>PIN, cookie ký và hai lớp bảo vệ</h2>
+  <div class="grid2">
+    <div class="ticket"><span class="id">AD-13 · Lớp 1: proxy.ts</span><p>Chỉ chuyển hướng người chưa có cookie hợp lệ về <code>/staff/login</code>. Đây là kiểm tra cho nhanh, không phải hàng rào chính.</p></div>
+    <div class="ticket"><span class="id">AD-13 · Lớp 2: requireStaff()</span><p>Chạy ở layout <code>(protected)</code> và đầu mọi API staff. Đây mới là nơi quyết định, trả 401 <code>UNAUTHORIZED</code>.</p></div>
+    <div class="ticket"><span class="id">AD-14 · Chống dò PIN</span><p>Mỗi lần kiểm PIN chạy lần lượt; sau mỗi lần sai phải chờ lâu dần (1 s, 2 s, 4 s… tối đa 30 s). Không khóa cứng nên người lạ không khóa được cả shop.</p></div>
+    <div class="ticket"><span class="id">AD-11 · Trang khách</span><p>API công khai đi qua <code>toPublicOrder()</code>: không có tên nhân viên, không có ghi chú nội bộ.</p></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Dữ liệu</span>
+  <h2>Order chỉ được thêm trường</h2>
+  <p>Mốc giờ và người thao tác có một nguồn duy nhất là <code>statusHistory</code>. Đơn cũ không có trường này vẫn hiển thị được: mốc đặt lấy từ <code>createdAt</code>, mốc khác hiện "—".</p>
+  <div class="diagram"><pre class="mermaid">
+erDiagram
+  SHOP_STATE ||--o{ ORDER : orders
+  SHOP_STATE ||--o{ INVENTORY_LEVEL : inventory
+  SHOP_STATE ||--o{ STOCK_LEDGER_ENTRY : "stockLedger (SHOULD)"
+  ORDER ||--|{ ORDER_ITEM : items
+  ORDER ||--o{ STATUS_CHANGE : statusHistory
+  ORDER_ITEM }o--|| PRODUCT : productId
+  INVENTORY_LEVEL }o--|| PRODUCT : productId
+  </pre></div>
+</section>
+
+<section>
+  <span class="eyebrow">Mười chín quyết định</span>
+  <h2>Bản đồ AD</h2>
+  <div class="grid2">
+    <div class="ticket"><span class="id">AD-1, AD-2 <span class="tag">ADOPTED</span></span><h3>Feature folder, hàm thuần có test</h3><p>Giữ cấu trúc hiện có; <code>createOrderService({ repository })</code> giữ chữ ký.</p></div>
+    <div class="ticket"><span class="id">AD-3 … AD-6</span><h3>Lưu trữ</h3><p>Một file, mutex cho mọi đọc ghi, retry <code>rename</code> trên Windows, khóa một tiến trình, điểm chèn lỗi cho test.</p></div>
+    <div class="ticket"><span class="id">AD-7, AD-8</span><h3>Chuyển trạng thái</h3><p>Một bảng chuyển, CAS theo "từ", thứ tự kiểm tra cố định; đường hủy của khách tách riêng.</p></div>
+    <div class="ticket"><span class="id">AD-9, AD-15, AD-16</span><h3>Tồn kho</h3><p>Phủ tồn kho ở server, khởi tạo một lần, đổi kho bằng script.</p></div>
+    <div class="ticket"><span class="id">AD-10 … AD-12</span><h3>Dữ liệu và hiển thị</h3><p>Chỉ thêm trường, dữ liệu công khai đã lọc, câu chữ sinh từ hàm thuần.</p></div>
+    <div class="ticket"><span class="id">AD-13, AD-14, AD-17</span><h3>Nhân viên và API</h3><p>PIN, cookie HMAC 12 giờ, chống dò PIN, endpoint <code>/api/staff/orders/:id/transitions</code>.</p></div>
+    <div class="ticket"><span class="id">AD-18</span><h3>Giao diện</h3><p>Không optimistic, không polling; làm mới sau phản hồi và bằng nút làm mới.</p></div>
+    <div class="ticket"><span class="id">AD-19</span><h3>Test</h3><p>E2E dùng thư mục <code>.e2e/</code> riêng, viewport 360px, test tương tranh chạy trên file tạm.</p></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Cần người khác quyết</span>
+  <h2>Mục còn mở</h2>
+  <div class="open">
+    <ul>
+      <li><strong>PM/UX:</strong> ví dụ "Dự kiến giao 23–25/11" ở UJ-2 không khớp quy tắc ngày làm việc (xác nhận thứ Bảy 21/11 cho ra 25–27/11 với giao tiêu chuẩn).</li>
+      <li><strong>PM:</strong> FR-5 nói "sửa dữ liệu khởi tạo để đổi tồn kho"; spine thay bằng script <code>stock:set</code>.</li>
+      <li><strong>PM:</strong> ngày lễ (OQ-4), xác nhận chuyển khoản (OQ-2), cờ "đã đóng gói" (OQ-3).</li>
+      <li><strong>Chủ shop:</strong> lịch sao lưu file <code>shop-store.json</code>.</li>
+      <li><strong>Trước khi phát hành:</strong> chạy <code>npm audit</code> cho Next 16.4.2.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>Nguồn: ARCHITECTURE-SPINE.md (AD-1 … AD-19) cùng thư mục, dựa trên PRD, addendum, EXPERIENCE.md và code commit 805f721.</footer>
+</div>
+
+<script>
+(function(){
+  var scripts = {
+    old: [
+      {a:"Đọc file: đơn pending, kho Micro = 1", h:"", s:{st:"pending",k:1}},
+      {a:"", h:"Đọc file: đơn pending, kho Micro = 1", s:{st:"pending",k:1}},
+      {a:"Kiểm tra: còn 1 ≥ 1, được", h:"Kiểm tra: còn 1 ≥ 1, được", s:{st:"pending",k:1}},
+      {a:"Ghi: confirmed bởi An, kho = 0", h:"", s:{st:"confirmed (An)",k:0}},
+      {a:"", h:"Ghi: confirmed bởi Hoa, kho = 0 (trừ trên bản đọc cũ)", s:{st:"confirmed (Hoa)",k:0,bad:true}}
+    ],
+    new: [
+      {a:"Lấy khóa, đọc: pending, kho = 1", h:"Chờ khóa…", s:{st:"pending",k:1}},
+      {a:"CAS: pending = from ✓ · đủ hàng ✓ · trừ kho", h:"Chờ khóa…", s:{st:"pending",k:1}},
+      {a:"Ghi .tmp → rename · nhả khóa · 200", h:"Chờ khóa…", s:{st:"confirmed (An)",k:0}, aok:true},
+      {a:"", h:"Lấy khóa, đọc: confirmed, kho = 0", s:{st:"confirmed (An)",k:0}},
+      {a:"", h:"CAS: confirmed ≠ pending → 409 \"Đã xác nhận bởi An lúc 08:05\", không ghi", s:{st:"confirmed (An)",k:0}, herr:true}
+    ]
+  };
+  var mode = "old", i = 0;
+  var la = document.getElementById("lane-a"), lh = document.getElementById("lane-h");
+  var st = document.getElementById("state"), vd = document.getElementById("verdict");
+  var bOld = document.getElementById("mode-old"), bNew = document.getElementById("mode-new");
+  var bStep = document.getElementById("btn-step");
+  function el(text, cls){ var d=document.createElement("div"); d.className="step "+(cls||""); d.textContent=text; return d; }
+  function render(){
+    la.textContent=""; lh.textContent="";
+    var steps = scripts[mode], last = steps[Math.max(0,i-1)];
+    for (var k=0;k<i;k++){
+      var s = steps[k], cur = k===i-1;
+      if (s.a) la.appendChild(el(s.a, s.aok?"okk":(cur?"now":"")));
+      if (s.h) lh.appendChild(el(s.h, s.herr?"err":(cur?"now":"")));
+    }
+    if (i===0){ la.appendChild(el("Chưa bắt đầu")); lh.appendChild(el("Chưa bắt đầu")); }
+    var snap = i===0 ? {st:"pending",k:1} : last.s;
+    st.innerHTML = "";
+    var a = document.createElement("span"); a.textContent = "Đơn: " + snap.st; st.appendChild(a);
+    var b = document.createElement("span"); b.textContent = "Kho Micro: " + snap.k; st.appendChild(b);
+    var c = document.createElement("span"); c.textContent = "Số lần trừ: " + (i>=steps.length && mode==="old" ? 2 : (snap.k===0?1:0));
+    if (i>=steps.length && mode==="old"){ c.className="bad"; b.className="bad"; }
+    st.appendChild(c);
+    bStep.disabled = i>=steps.length;
+    if (i>=steps.length){
+      vd.textContent = mode==="old"
+        ? "Kết quả: kho bị trừ hai lần nhưng chỉ có một món. Lịch sử ghi Hoa, đè mất thao tác của An. Đây là oversell."
+        : "Kết quả: kho trừ đúng một lần. Hoa nhận thông báo ai đã làm, thẻ tự chuyển sang nhóm Đã xác nhận.";
+    } else { vd.textContent = ""; }
+  }
+  function setMode(m){ mode=m; i=0; bOld.setAttribute("aria-pressed", m==="old"); bNew.setAttribute("aria-pressed", m==="new"); render(); }
+  bOld.addEventListener("click", function(){ setMode("old"); });
+  bNew.addEventListener("click", function(){ setMode("new"); });
+  document.getElementById("btn-reset").addEventListener("click", function(){ i=0; render(); });
+  bStep.addEventListener("click", function(){ if (i<scripts[mode].length){ i++; render(); } });
+  render();
+})();
+</script>

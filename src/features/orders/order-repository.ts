@@ -1,18 +1,139 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { createMutex, getFileMutex, type Mutex } from "./mutex";
+import { acquireStoreLock, type ProcessLockDeps } from "./process-lock";
+import { createShopStateFile, type ShopStateFileDeps } from "./shop-state-file";
+import { assertShopStateInvariants, parseShopState, type ShopState } from "./state-schema";
 import type { Order } from "./types";
 
-/** Nơi lưu trữ đơn hàng. Có thể thay bằng database thật mà không đổi order-service. */
+/** Kết quả của một mutator: trạng thái mới và giá trị trả về cho caller. */
+export interface StateMutation<T> {
+  state: ShopState;
+  result: T;
+}
+
+/**
+ * Nơi lưu trữ đơn hàng và tồn kho (AD-4). Mọi phương thức chạy trong một mutex dùng chung
+ * theo file, nên mọi quyết định trên dữ liệu hiện có phải nằm trong `update`.
+ */
 export interface OrderRepository {
   findAll(): Promise<Order[]>;
   findById(id: string): Promise<Order | null>;
-  /** Thêm mới hoặc cập nhật (theo id). */
+  /**
+   * Thêm mới hoặc cập nhật (upsert theo id). Chỉ dùng để dựng dữ liệu trong test và script;
+   * production thêm đơn qua `update` (insert-only, Story 1.6).
+   */
   save(order: Order): Promise<void>;
+  /** Bản sao toàn bộ trạng thái hiện tại. */
+  readState(): Promise<ShopState>;
+  /**
+   * Đọc → mutator → kiểm bất biến → ghi, trong cùng một lần giữ khóa.
+   * Mutator phải đồng bộ, thuần; nhận bản sao; ném lỗi thì không ghi gì.
+   */
+  update<T>(mutator: (state: ShopState) => StateMutation<T>): Promise<T>;
 }
 
 export const DEFAULT_ORDERS_FILE = path.join(process.cwd(), "storage", "orders.json");
+export const DEFAULT_STORE_FILE = path.join(process.cwd(), "storage", "shop-store.json");
 
-/** Lưu đơn hàng vào một file JSON - đủ dùng cho môi trường học tập, không dùng cho production. */
+export function emptyShopState(): ShopState {
+  return { schemaVersion: 1, orders: [], inventory: {}, inventoryBaseline: {} };
+}
+
+interface StateRepositoryParts {
+  mutex: Mutex;
+  load(): Promise<ShopState>;
+  persist(state: ShopState): Promise<void>;
+}
+
+/** Lõi chung của mọi adapter: khóa, bản sao và bất biến chỉ nằm ở đây. */
+function createStateRepository({ mutex, load, persist }: StateRepositoryParts): OrderRepository {
+  const readState = () => mutex.runExclusive(async () => structuredClone(await load()));
+
+  async function update<T>(mutator: (state: ShopState) => StateMutation<T>): Promise<T> {
+    return mutex.runExclusive(async () => {
+      const { state, result } = mutator(structuredClone(await load()));
+      assertShopStateInvariants(state);
+      await persist(state);
+      return result;
+    });
+  }
+
+  return {
+    readState,
+    update,
+    async findAll() {
+      return (await readState()).orders;
+    },
+    async findById(id) {
+      return (await readState()).orders.find((order) => order.id === id) ?? null;
+    },
+    async save(order) {
+      await update((state) => {
+        const index = state.orders.findIndex((item) => item.id === order.id);
+        if (index >= 0) {
+          state.orders[index] = structuredClone(order);
+        } else {
+          state.orders.push(structuredClone(order));
+        }
+        return { state, result: undefined };
+      });
+    },
+  };
+}
+
+export interface ShopRepositoryDeps extends ShopStateFileDeps {
+  /**
+   * Dựng trạng thái đầu tiên khi store chưa tồn tại (AD-15). Chạy trong mutex, sau khi đã đọc lại
+   * file, nên chỉ chạy một lần; kết quả được commit trước khi trả về. Không có thì store chưa tồn
+   * tại được đọc là trạng thái rỗng và không tạo file.
+   */
+  initialize?: () => Promise<ShopState>;
+  /** PID lock `<file>.lock` (AD-5), lấy lười ở lần truy cập đầu. Mặc định bật. */
+  lock?: boolean | ProcessLockDeps;
+  /**
+   * Chuẩn hóa trạng thái vừa nạp, trong mutex (ví dụ thêm key tồn kho cho sản phẩm mới, AD-9).
+   * Kết quả được ghi xuống ở lần `update` kế tiếp.
+   */
+  reconcile?: (state: ShopState) => ShopState;
+}
+
+/** File trạng thái chung `ShopState` (AD-3, AD-4). Tạo repository không đụng đĩa. */
+export function createJsonFileShopRepository(
+  filePath: string,
+  { initialize, lock = true, reconcile = (state) => state, ...fileDeps }: ShopRepositoryDeps = {},
+): OrderRepository {
+  const file = createShopStateFile(filePath, fileDeps);
+  /** `reconcile` chạy trong mutex; kết quả được kiểm schema và bất biến ngay, kể cả khi chỉ đọc. */
+  const reconciled = (state: ShopState): ShopState => {
+    const next = parseShopState(reconcile(state));
+    assertShopStateInvariants(next);
+    return next;
+  };
+  // Lock dùng cùng quy tắc khóa (platform) với mutex của file.
+  const lockDeps =
+    lock === false ? false : { platform: fileDeps.platform, ...(lock === true ? {} : lock) };
+
+  return createStateRepository({
+    mutex: getFileMutex(filePath, fileDeps.platform),
+    async load() {
+      if (lockDeps) await acquireStoreLock(filePath, lockDeps);
+      const existing = await file.read();
+      if (existing) return reconciled(existing);
+      if (!initialize) return reconciled(emptyShopState());
+      // Chuẩn hóa trước khi ghi lần đầu, để file và bộ nhớ giống nhau ngay từ đầu.
+      const state = reconciled(await initialize());
+      await file.commit(state);
+      return state;
+    },
+    persist: (state) => file.commit(state),
+  });
+}
+
+/**
+ * File `orders.json` cũ (mảng `Order[]`). Từ Story 1.4 không còn caller production: đơn cũ được
+ * nhập vào store bằng `importLegacyOrders`. Không lưu tồn kho — ghi chỉ giữ lại `orders`.
+ */
 export function createJsonFileOrderRepository(filePath: string): OrderRepository {
   async function readAll(): Promise<Order[]> {
     try {
@@ -32,41 +153,57 @@ export function createJsonFileOrderRepository(filePath: string): OrderRepository
     await fs.rename(tempFile, filePath);
   }
 
-  return {
-    findAll: readAll,
+  return createStateRepository({
+    mutex: getFileMutex(filePath),
+    load: async () => ({ ...emptyShopState(), orders: await readAll() }),
+    persist: (state) => writeAll(state.orders),
+  });
+}
 
-    async findById(id) {
-      const orders = await readAll();
-      return orders.find((order) => order.id === id) ?? null;
-    },
+/** Lỗi ghi giả lập của `failNextCommit` — tách khỏi `ShopStateError` (lỗi dữ liệu). */
+export class InjectedCommitError extends Error {
+  constructor() {
+    super("Lỗi ghi giả lập (failNextCommit)");
+    this.name = "InjectedCommitError";
+  }
+}
 
-    async save(order) {
-      const orders = await readAll();
-      const index = orders.findIndex((item) => item.id === order.id);
-      if (index >= 0) {
-        orders[index] = order;
-      } else {
-        orders.push(order);
-      }
-      await writeAll(orders);
-    },
-  };
+export interface InMemoryRepositoryOptions {
+  /** Tồn kho ban đầu; cũng dùng làm `inventoryBaseline`. */
+  inventory?: Record<string, number>;
+  /** Lần commit đầu tiên ném lỗi (chèn lỗi cho test, AD-6). */
+  failNextCommit?: boolean;
 }
 
 /** Repository trong bộ nhớ - dùng cho unit test. */
-export function createInMemoryOrderRepository(seed: Order[] = []): OrderRepository {
-  const orders = new Map(seed.map((order) => [order.id, structuredClone(order)]));
-
-  return {
-    async findAll() {
-      return [...orders.values()].map((order) => structuredClone(order));
-    },
-    async findById(id) {
-      const order = orders.get(id);
-      return order ? structuredClone(order) : null;
-    },
-    async save(order) {
-      orders.set(order.id, structuredClone(order));
-    },
+export function createInMemoryOrderRepository(
+  seed: Order[] = [],
+  options: InMemoryRepositoryOptions = {},
+): OrderRepository {
+  // Clone từng trường riêng: structuredClone giữ tham chiếu dùng chung bên trong một giá trị,
+  // nên clone chung một lần sẽ khiến inventory và inventoryBaseline trỏ cùng một object.
+  let current: ShopState = {
+    ...emptyShopState(),
+    orders: structuredClone(seed),
+    inventory: structuredClone(options.inventory ?? {}),
+    inventoryBaseline: structuredClone(options.inventory ?? {}),
   };
+  // Seed sai báo lỗi ngay khi dựng, không phải ở lần update đầu tiên.
+  parseShopState(current, "Seed của repository in-memory");
+  assertShopStateInvariants(current);
+  let failNextCommit = options.failNextCommit ?? false;
+
+  return createStateRepository({
+    mutex: createMutex(),
+    load: async () => current,
+    async persist(state) {
+      // Cùng kiểm tra schema như adapter file, để test in-memory không dễ dãi hơn production.
+      parseShopState(state);
+      if (failNextCommit) {
+        failNextCommit = false;
+        throw new InjectedCommitError();
+      }
+      current = structuredClone(state);
+    },
+  });
 }

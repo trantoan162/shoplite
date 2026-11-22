@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kho Ý Tưởng ShopLite</title>
+<meta name="description" content="Kỷ niệm phiên brainstorm 21/11/2026: công cụ vận hành đơn hàng cho nhân viên ShopLite và trang theo dõi đơn của khách.">
+<style>
+:root{
+  --paper:#f3ead9; --paper-2:#fbf6ec; --kraft:#d8bf94; --kraft-2:#c7a671; --kraft-ink:#6b4f27;
+  --ink:#1f2a3a; --ink-soft:#4a5568; --muted:#7a6f5d; --line:#cdbb98;
+  --stamp:#c0392b; --stamp-soft:rgba(192,57,43,.12);
+  --ok:#2f7d4f; --ok-soft:rgba(47,125,79,.13);
+  --warn:#b7791f; --warn-soft:rgba(183,121,31,.15);
+  --coach:#2b5797; --coach-soft:rgba(43,87,151,.11);
+  --you:#d99a00; --you-soft:rgba(240,180,20,.25);
+  --tape:rgba(240,228,180,.75);
+  --card:#fffdf8; --shadow:0 1px 0 rgba(0,0,0,.04),0 6px 18px -8px rgba(60,40,10,.28);
+  --mono:ui-monospace,"Cascadia Mono",Consolas,"SFMono-Regular",Menlo,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --serif:Georgia,"Times New Roman",serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#16130f; --paper-2:#1e1a15; --kraft:#4a3b26; --kraft-2:#5c4930; --kraft-ink:#e2c99c;
+    --ink:#efe6d6; --ink-soft:#c3b8a5; --muted:#9a8f7c; --line:#3d3428;
+    --stamp:#ff6b5a; --stamp-soft:rgba(255,107,90,.14);
+    --ok:#5fd08e; --ok-soft:rgba(95,208,142,.13);
+    --warn:#f0b34a; --warn-soft:rgba(240,179,74,.14);
+    --coach:#8db4ff; --coach-soft:rgba(141,180,255,.12);
+    --you:#ffc93c; --you-soft:rgba(255,201,60,.18);
+    --tape:rgba(120,105,60,.55);
+    --card:#221d17; --shadow:0 1px 0 rgba(255,255,255,.03),0 8px 22px -10px rgba(0,0,0,.7);
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans);
+  line-height:1.55; font-size:16px; overflow-x:hidden;
+  background-image:radial-gradient(rgba(120,90,40,.06) 1px,transparent 1px);
+  background-size:14px 14px;
+}
+h1,h2,h3{line-height:1.2;margin:0}
+p{margin:0 0 .6em}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+section{padding:56px 0 24px;scroll-margin-top:70px}
+.overline{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.sec-head{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:22px;border-bottom:2px dashed var(--line);padding-bottom:12px}
+.sec-head h2{font-family:var(--serif);font-size:clamp(26px,4.4vw,40px);font-weight:700}
+.sec-head .bin{font-family:var(--mono);font-weight:700;background:var(--ink);color:var(--paper);padding:4px 10px;border-radius:4px;font-size:13px}
+.sec-head .sub{flex-basis:100%;color:var(--ink-soft);max-width:720px}
+
+/* authorship */
+.by{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;padding:1px 7px;border-radius:999px;border:1.5px solid currentColor;white-space:nowrap;vertical-align:middle}
+.by.you{color:var(--kraft-ink);background:var(--you-soft);border-color:var(--you)}
+.by.you::before{content:"★"}
+.by.coach{color:var(--coach);background:var(--coach-soft)}
+.by.both{color:var(--muted)}
+[data-by="you"]{position:relative}
+.idea{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;box-shadow:var(--shadow);overflow-wrap:anywhere}
+.idea[data-by="you"]{border-color:var(--you);box-shadow:0 0 0 2px var(--you-soft),var(--shadow)}
+.idea .by{margin-bottom:5px}
+.idea p{margin:0}
+body.only-you [data-by="coach"]{opacity:.22;filter:grayscale(1)}
+body.only-you [data-by="you"]{transform:scale(1.01)}
+[data-by]{transition:opacity .3s,filter .3s,transform .3s}
+
+/* tracking nav */
+.track{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--paper) 90%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.track ol{list-style:none;margin:0 auto;padding:10px 16px;max-width:1080px;display:flex;gap:0;overflow-x:auto;scrollbar-width:none}
+.track ol::-webkit-scrollbar{display:none}
+.track li{flex:1 0 auto;position:relative}
+.track a{display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;color:var(--muted);font-size:11.5px;font-family:var(--mono);padding:0 8px;white-space:nowrap}
+.track a .dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);background:var(--paper);position:relative;z-index:1;transition:.3s}
+.track li:not(:last-child)::after{content:"";position:absolute;top:6px;left:calc(50% + 9px);right:calc(-50% + 9px);height:2px;background:var(--line)}
+.track li.done a .dot{background:var(--ok);border-color:var(--ok)}
+.track li.done:not(:last-child)::after{background:var(--ok)}
+.track li.now a{color:var(--ink);font-weight:700}
+.track li.now a .dot{background:var(--you);border-color:var(--you);box-shadow:0 0 0 4px var(--you-soft)}
+
+/* hero label */
+.hero{padding:34px 0 10px}
+.label{position:relative;background:var(--card);border:2px solid var(--ink);border-radius:6px;display:grid;grid-template-columns:1.4fr 1fr;box-shadow:8px 8px 0 var(--kraft-2);overflow:hidden}
+.label>div{padding:18px 20px}
+.label .l-main{border-right:2px dashed var(--ink)}
+.label h1{font-family:var(--serif);font-size:clamp(28px,5.4vw,52px);letter-spacing:-.01em;margin:6px 0 10px}
+.label h1 em{font-style:normal;background:linear-gradient(transparent 62%,var(--you-soft) 62%)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
+.kv dt{font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;padding-top:3px}
+.kv dd{margin:0;overflow-wrap:anywhere}
+.barcode{height:56px;margin:14px 0 4px;background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 4px,var(--ink) 4px 5px,transparent 5px 8px,var(--ink) 8px 11px,transparent 11px 12px,var(--ink) 12px 13px,transparent 13px 16px)}
+.barcode-n{font-family:var(--mono);font-size:12px;letter-spacing:.3em;text-align:center}
+.stamp{display:inline-block;font-family:var(--mono);font-weight:800;text-transform:uppercase;color:var(--stamp);border:3px double var(--stamp);padding:4px 12px;border-radius:6px;transform:rotate(-8deg);letter-spacing:.08em;opacity:.9;background:var(--stamp-soft)}
+.label .stamp{position:absolute;right:18px;top:16px;font-size:18px}
+.tally{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.tally div{border:1.5px solid var(--line);border-radius:6px;padding:8px 10px;text-align:center}
+.tally b{display:block;font-family:var(--serif);font-size:34px;line-height:1}
+.tally .t-you{border-color:var(--you);background:var(--you-soft)}
+.tally .t-coach b{color:var(--coach)}
+.tally small{font-size:12px;color:var(--ink-soft)}
+.toggle{margin-top:14px;display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;user-select:none;flex-wrap:wrap}
+.toggle input{position:absolute;opacity:0;pointer-events:none}
+.toggle .sw{width:44px;height:24px;border-radius:999px;background:var(--line);position:relative;transition:.25s;flex:none}
+.toggle .sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--card);transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.toggle input:checked+.sw{background:var(--you)}
+.toggle input:checked+.sw::after{left:23px}
+.toggle input:focus-visible+.sw{outline:2px solid var(--coach);outline-offset:2px}
+
+/* context: bug notes + state machine */
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:16px;margin-bottom:28px}
+.note{background:#fff3a8;color:#3a3110;padding:16px 16px 18px;box-shadow:var(--shadow);transform:rotate(-1.2deg);position:relative;font-size:15px}
+.note:nth-child(2){transform:rotate(1deg);background:#ffd9c9}
+.note:nth-child(3){transform:rotate(-.4deg);background:#d6f0dc}
+.note::before{content:"";position:absolute;top:-10px;left:50%;width:70px;height:20px;margin-left:-35px;background:var(--tape);transform:rotate(-3deg)}
+.note b{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;opacity:.7}
+@media (prefers-color-scheme:dark){.note{filter:brightness(.82) saturate(.9)}}
+.flow{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;box-shadow:var(--shadow)}
+.flow svg{width:100%;height:auto;display:block}
+.flow .cap{font-size:13px;color:var(--ink-soft);margin-top:8px}
+
+/* YES AND chain */
+.chain-root{display:flex;flex-direction:column;align-items:flex-start;gap:0}
+.link{position:relative;padding-left:34px;margin:0 0 14px;max-width:640px;width:100%}
+.link::before{content:"";position:absolute;left:12px;top:-14px;bottom:-14px;width:2px;background:repeating-linear-gradient(var(--kraft-2) 0 6px,transparent 6px 10px)}
+.link:first-child::before{top:18px}
+.link::after{content:"";position:absolute;left:6px;top:16px;width:14px;height:14px;border-radius:50%;background:var(--paper);border:2px solid var(--kraft-2)}
+.link[data-by="you"]::after{background:var(--you);border-color:var(--you)}
+.yes{font-family:var(--mono);font-size:11px;color:var(--ok);font-weight:700;letter-spacing:.06em;margin:0 0 3px 2px}
+.branches{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:22px;margin-top:10px}
+.branch{background:color-mix(in srgb,var(--kraft) 22%,transparent);border:1.5px dashed var(--kraft-2);border-radius:12px;padding:16px 12px 4px}
+.branch h3{font-size:15px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;margin:0 0 14px;color:var(--kraft-ink)}
+.branch .link{padding-left:30px}
+.qtag{display:inline-block;margin:4px 0 14px 34px;background:var(--warn-soft);color:var(--warn);border:1.5px dashed var(--warn);border-radius:6px;padding:6px 10px;font-size:14px}
+.qtag b{font-family:var(--mono);font-size:11px;margin-right:6px}
+
+/* ROLE PLAYING voices */
+.voices{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:20px}
+.voice{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 0 14px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+.voice header{display:flex;gap:12px;align-items:center;padding:14px 16px;background:color-mix(in srgb,var(--kraft) 35%,var(--card));border-bottom:1px solid var(--line)}
+.avatar{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:24px;background:var(--paper);border:2px solid var(--ink);flex:none}
+.voice h3{font-size:17px}
+.voice header small{display:block;color:var(--muted);font-size:12px;font-family:var(--mono)}
+.bubble{margin:14px 16px 10px;padding:12px 14px;border-radius:14px 14px 14px 2px;background:var(--paper-2);border:1.5px solid var(--ink);font-family:var(--serif);font-size:18px;font-style:italic;position:relative}
+.bubble[data-by="you"]{border-color:var(--you);background:var(--you-soft)}
+.bubble .by{font-style:normal;font-family:var(--mono);margin-left:6px}
+.voice ul{list-style:none;margin:0;padding:0 16px;display:flex;flex-direction:column;gap:8px}
+.voice li.idea{font-size:14.5px}
+.voice.night{background:#0e1320;color:#e6ecf7;border-color:#26324a}
+.voice.night header{background:#151d30;border-color:#26324a}
+.voice.night header small{color:#8fa0c0}
+.voice.night .avatar{background:#0e1320;border-color:#ffc93c}
+.phone-dash{margin:14px 16px 10px;border:2px solid #33415e;border-radius:18px;padding:12px;background:#0a0f1a}
+.phone-dash .clock{font-family:var(--mono);text-align:center;color:#ffc93c;font-size:22px;letter-spacing:.1em;margin-bottom:8px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tile{background:#141c2e;border:1px solid #26324a;border-radius:10px;padding:8px 10px;font-size:12.5px;color:#c9d4ea;position:relative}
+.tile b{display:block;color:#fff;font-size:14px;margin-top:2px}
+.tile.you{border-color:#ffc93c}
+.tile.you::after{content:"★";position:absolute;right:8px;top:6px;color:#ffc93c;font-size:12px}
+.voice.night .idea{background:#141c2e;border-color:#26324a;color:#e6ecf7}
+.voice.night .by.coach{color:#8db4ff}
+.night-insight{margin:10px 16px 0;font-size:13.5px;color:#ffc93c;border-top:1px dashed #33415e;padding-top:10px}
+
+/* REVERSE pairs */
+.rev-group{margin-bottom:30px}
+.rev-group>h3{font-family:var(--mono);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.rev{display:grid;grid-template-columns:1fr 56px 1fr;gap:0;align-items:stretch;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.rev .bad,.rev .good{padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.rev .bad{background:repeating-linear-gradient(-45deg,var(--stamp-soft) 0 10px,transparent 10px 20px)}
+.rev .good{background:var(--ok-soft)}
+.rev .bad .item{text-decoration:line-through;text-decoration-color:var(--stamp);text-decoration-thickness:2px;color:var(--ink-soft)}
+.rev .item{font-size:14.5px;display:block;overflow-wrap:anywhere}
+.rev .item .by{text-decoration:none;display:inline-flex;margin-right:6px}
+.rev .tag{font-family:var(--mono);font-size:11px;font-weight:800;letter-spacing:.12em}
+.rev .bad .tag{color:var(--stamp)}
+.rev .good .tag{color:var(--ok)}
+.rev .flip{display:grid;place-items:center;background:var(--paper-2);border-left:1px dashed var(--line);border-right:1px dashed var(--line)}
+.flip-btn{width:42px;height:42px;border-radius:50%;border:2px solid var(--ink);background:var(--card);color:var(--ink);font-size:20px;cursor:pointer;transition:transform .5s}
+.flip-btn:hover,.flip-btn:focus-visible{transform:rotate(180deg)}
+.rev.flipped .bad{opacity:.35}
+.rev.flipped .good{box-shadow:inset 0 0 0 3px var(--ok)}
+.decision{margin-top:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--card);border:2px solid var(--stamp);border-radius:10px;padding:12px 14px}
+.decision .stamp{transform:rotate(-4deg);font-size:13px}
+.decision p{margin:0;flex:1 1 260px;font-weight:600}
+.insight-strip{margin-top:12px;font-size:14.5px;padding:10px 14px;border-left:4px solid var(--coach);background:var(--coach-soft);border-radius:0 8px 8px 0}
+
+/* HMW */
+.tickets{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px;margin-bottom:12px}
+.ticket{position:relative;background:var(--card);border:1.5px solid var(--line);border-radius:8px;padding:28px 14px 14px;box-shadow:var(--shadow);font-size:15px;overflow-wrap:anywhere}
+.ticket::before,.ticket::after{content:"";position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:var(--paper);border:1.5px solid var(--line);margin-top:-8px}
+.ticket::before{left:-9px}.ticket::after{right:-9px}
+.ticket .no{position:absolute;top:8px;left:14px;font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:700}
+.ticket .by{position:absolute;top:7px;right:12px}
+.ticket.chosen{border:2.5px solid var(--you);background:linear-gradient(var(--you-soft),var(--you-soft)),var(--card)}
+.ticket.chosen .stamp{position:absolute;bottom:-14px;right:10px;font-size:12px;background:var(--card)}
+.ticket.hint .hint-tag{display:inline-block;margin-top:8px;font-size:12px;font-family:var(--mono);color:var(--coach)}
+.hmw-layout{display:grid;grid-template-columns:minmax(0,320px) 1fr;gap:30px;align-items:start;margin-top:34px}
+.phone{width:100%;max-width:320px;margin:0 auto;background:var(--ink);border-radius:34px;padding:12px;box-shadow:var(--shadow)}
+.screen{background:var(--paper-2);border-radius:24px;overflow:hidden;min-height:520px;display:flex;flex-direction:column}
+.screen .bar{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;padding:8px 18px;color:var(--ink-soft)}
+.screen .sh{padding:6px 18px 12px;font-size:13px;color:var(--muted);font-family:var(--mono)}
+.one-line{margin:0 14px;padding:14px;border-radius:14px;background:var(--card);border:1.5px solid var(--line);font-family:var(--serif);font-size:18px;line-height:1.35}
+.three{display:flex;flex-direction:column;gap:8px;margin:12px 14px}
+.three div{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:var(--card);border:1px solid var(--line);font-size:14px}
+.three .n{flex:none;width:22px;height:22px;border-radius:50%;background:var(--you);color:#2a1f00;font-weight:800;font-size:12px;display:grid;place-items:center}
+.three small{display:block;color:var(--muted);font-size:11.5px}
+.mini-progress{display:flex;gap:4px;margin-top:6px}
+.mini-progress i{flex:1;height:5px;border-radius:3px;background:var(--line)}
+.mini-progress i.on{background:var(--ok)}
+.alert-band{margin:0 14px;max-height:0;overflow:hidden;transition:max-height .45s,margin .45s;border-radius:12px}
+.screen.need-action .alert-band{max-height:160px;margin:12px 14px 0}
+.alert-band div{background:var(--warn-soft);border:1.5px solid var(--warn);border-radius:12px;padding:10px 12px;font-size:13.5px}
+.alert-band button{margin-top:6px;border:0;background:var(--warn);color:#fff;border-radius:8px;padding:6px 10px;font-weight:700;font-size:13px}
+.folded{margin:auto 14px 14px;padding:10px 12px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--muted);text-align:center}
+.demo-btn{display:block;margin:12px auto 0;border:2px solid var(--ink);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px;font-weight:700;cursor:pointer;font-size:14px}
+.demo-btn[aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:#fff}
+.hmw-notes{display:flex;flex-direction:column;gap:12px}
+
+/* CONVERGE: shelf bins + moscow crates */
+.shelf{background:linear-gradient(var(--kraft-2),var(--kraft-2)) bottom/100% 10px no-repeat;padding-bottom:14px;margin-bottom:34px}
+.bins{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:10px}
+.binbox{background:var(--kraft);color:#3a2a10;border-radius:4px 4px 0 0;padding:12px 12px 10px;position:relative;min-height:96px;box-shadow:inset 0 -6px 0 rgba(0,0,0,.08)}
+.binbox::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:18px;margin-left:-9px;background:rgba(255,255,255,.18)}
+.binbox b{font-family:var(--mono);font-size:24px;display:block;position:relative}
+.binbox span{position:relative;font-size:14px;font-weight:600;display:block}
+.binbox.core{background:var(--you);outline:3px solid var(--stamp);outline-offset:-3px}
+@media (prefers-color-scheme:dark){.binbox{background:#8a6d43;color:#1c1408}}
+.crates{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:16px}
+.crate{border:2px solid var(--ink);border-radius:8px;background:var(--card);overflow:hidden;box-shadow:var(--shadow)}
+.crate h3{padding:10px 14px;font-family:var(--mono);font-size:15px;letter-spacing:.08em;display:flex;justify-content:space-between;align-items:center}
+.crate.must h3{background:var(--stamp);color:#fff}
+.crate.should h3{background:var(--warn);color:#fff}
+.crate.could h3{background:var(--coach);color:#fff}
+.crate.wont h3{background:var(--muted);color:#fff}
+.crate ul{margin:0;padding:12px 14px 14px 30px;font-size:14.5px;display:flex;flex-direction:column;gap:6px}
+.crate.wont li{color:var(--ink-soft)}
+.crate .why{padding:0 14px 14px;font-size:12.5px;color:var(--muted);font-style:italic}
+.approve{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:20px;font-size:15px}
+.approve .stamp{font-size:20px;color:var(--ok);border-color:var(--ok);background:var(--ok-soft)}
+
+/* SYNTHESIS climax */
+.climax{background:var(--ink);color:var(--paper);border-radius:18px;padding:40px 22px 30px;position:relative;overflow:hidden}
+@media (prefers-color-scheme:dark){.climax{background:#0c0a08;border:1px solid var(--line)}}
+.climax .overline{color:color-mix(in srgb,var(--paper) 60%,transparent)}
+.big-quote{font-family:var(--serif);font-size:clamp(30px,6.4vw,64px);line-height:1.08;margin:12px 0 10px;max-width:900px}
+.big-quote mark{background:none;color:var(--you);box-shadow:inset 0 -.14em 0 rgba(255,201,60,.35)}
+@media (prefers-color-scheme:light){.big-quote mark{color:#ffc93c}}
+.climax .who{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}
+.climax .by.you{color:#ffc93c;background:rgba(255,201,60,.15);border-color:#ffc93c}
+.stack{display:flex;flex-direction:column;align-items:center;gap:6px;margin:34px auto 10px;max-width:640px}
+.stack .row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;width:100%}
+.box{background:#c7a671;color:#2a1d08;border-radius:4px;padding:8px 10px;font-size:12.5px;font-weight:700;text-align:center;flex:1 1 120px;max-width:200px;box-shadow:inset 0 -4px 0 rgba(0,0,0,.12);opacity:.65}
+.box.lvl2{opacity:.82}
+.foundation{width:100%;background:#ffc93c;color:#2a1f00;border-radius:6px;padding:16px;text-align:center;font-weight:800;font-size:clamp(15px,2.6vw,19px);box-shadow:0 0 0 3px #c0392b,0 10px 30px -8px rgba(255,201,60,.6)}
+.foundation small{display:block;font-weight:600;font-size:12.5px;margin-top:4px}
+.ground{width:100%;height:10px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.25) 0 8px,transparent 8px 14px);border-radius:2px}
+.stack-cap{text-align:center;font-size:13px;color:color-mix(in srgb,var(--paper) 65%,transparent);margin-bottom:24px}
+.links4{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px;margin-top:10px}
+.conn{border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:14px;background:rgba(255,255,255,.04);position:relative}
+.conn .num{font-family:var(--serif);font-size:40px;line-height:1;color:#ffc93c}
+.conn h4{margin:6px 0 6px;font-size:16px}
+.conn p{font-size:14px;color:color-mix(in srgb,var(--paper) 80%,transparent);margin:0}
+.conn .pair{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.conn .pair span{font-family:var(--mono);font-size:11px;border:1px dashed rgba(255,255,255,.35);border-radius:999px;padding:2px 8px}
+.climax .by.coach{color:#8db4ff;background:rgba(141,180,255,.12)}
+
+.answer{margin-top:34px;background:var(--card);color:var(--ink);border-radius:10px;overflow:hidden;font-family:var(--mono);box-shadow:var(--shadow)}
+.answer .rcpt-head{padding:16px 18px 10px;text-align:center;border-bottom:2px dashed var(--line)}
+.answer .rcpt-head b{font-size:17px;letter-spacing:.12em}
+.answer .rcpt-head small{display:block;color:var(--muted);font-size:11.5px}
+.answer table{width:100%;border-collapse:collapse;font-family:var(--sans);font-size:14.5px}
+.answer th{text-align:left;vertical-align:top;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:14px 12px 14px 18px;width:28%;color:var(--kraft-ink);border-bottom:1px dashed var(--line)}
+.answer td{padding:14px 18px 14px 6px;border-bottom:1px dashed var(--line);overflow-wrap:anywhere}
+.answer td ul{margin:0;padding-left:18px}
+.answer tr.hl td,.answer tr.hl th{background:var(--you-soft)}
+.answer .rcpt-foot{padding:14px 18px;text-align:center;font-size:12.5px}
+.answer .rcpt-foot .barcode{height:40px;margin:8px auto 4px;max-width:320px}
+.zigzag{height:12px;background:linear-gradient(-45deg,transparent 8px,var(--card) 0) 0 0/16px 16px repeat-x,linear-gradient(45deg,transparent 8px,var(--card) 0) 0 0/16px 16px repeat-x;transform:rotate(180deg);margin-top:-1px}
+.final-decision{margin-top:26px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.final-decision .stamp{color:#ff6b5a;border-color:#ff6b5a;background:rgba(255,107,90,.1);font-size:16px}
+.final-decision p{flex:1 1 280px;margin:0;font-size:16px}
+
+footer{padding:40px 16px 60px;text-align:center;color:var(--muted);font-size:13px;font-family:var(--mono)}
+
+@media (max-width:760px){
+  .label{grid-template-columns:1fr;box-shadow:5px 5px 0 var(--kraft-2)}
+  .label .l-main{border-right:0;border-bottom:2px dashed var(--ink)}
+  .label .stamp{top:auto;bottom:14px;font-size:14px}
+  .rev{grid-template-columns:1fr}
+  .rev .flip{border:0;border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);padding:6px}
+  .flip-btn{transform:rotate(90deg)}
+  .flip-btn:hover,.flip-btn:focus-visible{transform:rotate(270deg)}
+  .hmw-layout{grid-template-columns:1fr}
+  .answer th{display:block;width:auto;border-bottom:0;padding-bottom:2px}
+  .answer td{display:block;padding:4px 18px 14px}
+  .answer tr{display:block}
+  .track a{font-size:10.5px;padding:0 5px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<nav class="track" aria-label="Hành trình phiên">
+  <ol id="track">
+    <li><a href="#boi-canh"><span class="dot"></span>Bối cảnh</a></li>
+    <li><a href="#yes-and"><span class="dot"></span>Yes And</a></li>
+    <li><a href="#nhap-vai"><span class="dot"></span>Nhập vai</a></li>
+    <li><a href="#dao-nguoc"><span class="dot"></span>Đảo ngược</a></li>
+    <li><a href="#hmw"><span class="dot"></span>HMW</a></li>
+    <li><a href="#hoi-tu"><span class="dot"></span>Hội tụ</a></li>
+    <li><a href="#ket-luan"><span class="dot"></span>Đã giao ✓</a></li>
+  </ol>
+</nav>
+
+<header class="hero wrap">
+  <div class="label">
+    <div class="l-main">
+      <div class="overline">Phiếu gửi hàng · Kiện ý tưởng #2026-11-21</div>
+      <h1>Kho ý tưởng<br><em>ShopLite</em></h1>
+      <dl class="kv">
+        <dt>Chủ đề</dt><dd>Công cụ vận hành đơn hàng cho nhân viên ShopLite + khách theo dõi trạng thái đơn</dd>
+        <dt>Mục tiêu</dt><dd>Xác định công cụ nên làm gì, cho ai, và điều gì quan trọng nhất</dd>
+        <dt>Chế độ</dt><dd>Creative Partner — bạn và coach cùng xây</dd>
+        <dt>Lộ trình</dt><dd>Yes And → Nhập vai → Đảo ngược → How Might We → Hội tụ</dd>
+      </dl>
+    </div>
+    <div class="l-side">
+      <div class="overline">Người gửi → Người nhận</div>
+      <p style="margin:6px 0 0;font-weight:700">Phiên brainstorm 21/11/2026 → Đội ShopLite</p>
+      <div class="barcode" aria-hidden="true"></div>
+      <div class="barcode-n">SL·PENDING→DELIVERED</div>
+      <div class="tally">
+        <div class="t-you" data-by="you"><b>34</b><small>đóng góp từ bạn ★</small></div>
+        <div class="t-coach"><b>43</b><small>đóng góp từ coach</small></div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="onlyYou"><span class="sw"></span><span>Chỉ soi ý của <b>bạn</b></span></label>
+    </div>
+    <span class="stamp">Hoàn tất</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- BỐI CẢNH -->
+<section id="boi-canh">
+  <div class="sec-head"><span class="bin">KỆ 0</span><h2>Ba phiếu báo lỗi dán trên tủ</h2>
+    <p class="sub">Trước khi nghĩ gì, phiên bắt đầu từ chuyện thật đang xảy ra ở cửa hàng.</p></div>
+  <div class="notes">
+    <div class="note"><b>Phiếu #1</b>Đơn kẹt mãi ở <strong>“Chờ xác nhận”</strong>.</div>
+    <div class="note"><b>Phiếu #2</b>Không có chỗ nào để <strong>xác nhận / giao / đánh dấu đã giao</strong>.</div>
+    <div class="note"><b>Phiếu #3</b>Tồn kho trên web <strong>không giảm</strong> khi bán.</div>
+  </div>
+  <div class="flow">
+    <div class="overline" style="margin-bottom:8px">Code đã có sẵn 5 trạng thái — chỉ là chưa ai “đẩy” đơn đi</div>
+    <svg viewBox="0 0 860 190" role="img" aria-label="Luồng trạng thái: pending sang confirmed sang shipping sang delivered, cancelled rẽ nhánh; khách chỉ hủy được khi pending">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="currentColor"/></marker></defs>
+      <g font-family="ui-monospace,Consolas,monospace" font-size="15" text-anchor="middle" style="color:var(--ink)">
+        <g stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#ar)">
+          <path d="M170 60H222"/><path d="M390 60H442"/><path d="M610 60H662"/>
+          <path d="M90 88V140H398" stroke-dasharray="5 5" style="color:var(--stamp)"/>
+        </g>
+        <g stroke="currentColor" stroke-width="2">
+          <rect x="10" y="34" width="160" height="54" rx="10" fill="var(--warn-soft)" style="stroke:var(--warn)"/>
+          <rect x="230" y="34" width="160" height="54" rx="10" fill="var(--card)"/>
+          <rect x="450" y="34" width="160" height="54" rx="10" fill="var(--card)"/>
+          <rect x="670" y="34" width="170" height="54" rx="10" fill="var(--ok-soft)" style="stroke:var(--ok)"/>
+          <rect x="400" y="116" width="170" height="50" rx="10" fill="var(--stamp-soft)" style="stroke:var(--stamp)"/>
+        </g>
+        <g fill="var(--ink)">
+          <text x="90" y="58" font-weight="700">pending</text><text x="90" y="77" font-size="12" fill="var(--ink-soft)">Chờ xác nhận</text>
+          <text x="310" y="58" font-weight="700">confirmed</text><text x="310" y="77" font-size="12" fill="var(--ink-soft)">Đã xác nhận</text>
+          <text x="530" y="58" font-weight="700">shipping</text><text x="530" y="77" font-size="12" fill="var(--ink-soft)">Đang giao</text>
+          <text x="755" y="58" font-weight="700">delivered</text><text x="755" y="77" font-size="12" fill="var(--ink-soft)">Đã giao</text>
+          <text x="485" y="139" font-weight="700">cancelled</text><text x="485" y="157" font-size="12" fill="var(--ink-soft)">Đã hủy</text>
+          <text x="245" y="132" font-size="12" fill="var(--stamp)">khách chỉ hủy được ở đây</text>
+        </g>
+      </g>
+    </svg>
+  </div>
+</section>
+
+<!-- YES AND -->
+<section id="yes-and">
+  <div class="sec-head"><span class="bin">KỆ 1</span><h2>Yes And — sợi dây “Có, và…”</h2>
+    <p class="sub">Mỗi ý nối vào ý trước như một mắt xích. Từ một màn hình hàng đợi, sợi dây tách thành ba nhánh. Mắt xích vàng là của bạn.</p></div>
+
+  <div class="chain-root">
+    <div class="link" data-by="coach"><div class="idea" data-by="coach"><span class="by coach">coach</span><p>Màn hình hàng đợi đơn “Chờ xác nhận”, đơn chờ lâu nhất lên đầu, mỗi đơn một nút <b>Xác nhận</b> to.</p></div></div>
+    <div class="link" data-by="you"><div class="yes">CÓ, VÀ…</div><div class="idea" data-by="you"><span class="by you">bạn · insight</span><p><b>Chủ shop là người dùng chính</b>: muốn xác nhận đơn NHANH và SỢ bán vượt tồn kho (oversell) — hai nhu cầu cốt lõi.</p></div></div>
+    <div class="link" data-by="coach"><div class="yes">CÓ, VÀ…</div><div class="idea" data-by="coach"><span class="by coach">coach</span><p>Mỗi đơn gắn <b>đèn tồn kho</b>: <span style="color:var(--ok);font-weight:700">● xanh</span> = đủ hàng, xác nhận 1 chạm; <span style="color:var(--stamp);font-weight:700">● đỏ</span> = thiếu hàng, khóa nút, hiện thiếu bao nhiêu.</p></div></div>
+  </div>
+
+  <div class="branches">
+    <div class="branch">
+      <h3>↳ Nhánh đơn đỏ (thiếu hàng)</h3>
+      <div class="link" data-by="you"><div class="idea" data-by="you"><span class="by you">bạn</span><p>Gợi ý <b>hàng thay thế</b> cho món thiếu.</p></div></div>
+      <div class="link" data-by="you"><div class="yes">CÓ, VÀ…</div><div class="idea" data-by="you"><span class="by you">bạn</span><p><b>Giao trước phần còn hàng</b> (tách đơn / giao từng phần).</p></div></div>
+      <div class="link" data-by="coach"><div class="yes">CÓ, VÀ…</div><div class="idea" data-by="coach"><span class="by coach">coach</span><p>Khách tự chọn qua link: đổi hàng thay thế / giao trước phần có / chờ đủ hàng → trạng thái “Chờ khách quyết định”.</p></div></div>
+      <div class="qtag"><b>? CÂU HỎI MỞ</b>Giao từng phần thì phí ship và trạng thái tính thế nào — một đơn hai trạng thái hay tách hai đơn?</div>
+    </div>
+
+    <div class="branch">
+      <h3>↳ Nhánh hủy đơn</h3>
+      <div class="link" data-by="you"><div class="idea" data-by="you"><span class="by you">bạn · câu hỏi</span><p>“Nếu khách hủy đơn thì sao?”</p></div></div>
+      <div class="link" data-by="coach"><div class="yes">CÓ, VÀ…</div><div class="idea" data-by="coach"><span class="by coach">coach</span><p>Hủy = trả hàng về kho, kèm log “hoàn kho do hủy đơn #…”.</p></div></div>
+      <div class="link" data-by="coach"><div class="idea" data-by="coach"><span class="by coach">coach</span><p>Quyền hủy theo giai đoạn: Chờ xác nhận → tự hủy; Đã xác nhận → gửi yêu cầu, shop duyệt; Đang giao → từ chối nhận / hoàn hàng.</p></div></div>
+      <div class="link" data-by="coach"><div class="idea" data-by="coach"><span class="by coach">coach</span><p>Bắt buộc chọn lý do hủy → thống kê vì sao mất đơn. Đơn bị hủy hiện nổi bật trong hàng đợi để kịp dừng. Shop hủy cũng phải ghi lý do và báo khách.</p></div></div>
+      <div class="link" data-by="you"><div class="yes">CÓ, VÀ…</div><div class="idea" data-by="you"><span class="by you">bạn</span><p>Hủy khi đã đóng gói: <b>giữ hàng lại → liên hệ khách xác nhận → rồi mới hoàn kho</b> — quy trình 3 bước.</p></div></div>
+      <div class="link" data-by="you"><div class="idea" data-by="you"><span class="by you">bạn · insight</span><p>Hoàn kho chỉ xảy ra <b>SAU</b> khi xác nhận với khách — không tự động hoàn ngay khi có yêu cầu hủy.</p></div></div>
+      <div class="link" data-by="coach"><div class="yes">CÓ, VÀ…</div><div class="idea" data-by="coach"><span class="by coach">coach</span><p>Kệ “Tạm giữ” có đồng hồ 24h + kịch bản “Gọi khách” với kết quả ghi 1 chạm.</p></div></div>
+    </div>
+
+    <div class="branch">
+      <h3>↳ Nhánh trang của khách</h3>
+      <div class="link" data-by="you"><div class="idea" data-by="you"><span class="by you">bạn</span><p><b>Thanh tiến trình</b>: Chờ xác nhận → Đã xác nhận → Đang giao → Đã giao.</p></div></div>
+      <div class="link" data-by="you"><div class="yes">CÓ, VÀ…</div><div class="idea" data-by="you"><span class="by you">bạn</span><p>Hiển thị <b>thời gian dự kiến giao</b>.</p></div></div>
+      <div class="link" data-by="coach"><div class="yes">CÓ, VÀ…</div><div class="idea" data-by="coach"><span class="by coach">coach</span><p>Mỗi bước có mốc giờ thật — “Đã xác nhận 9:15 sáng nay”.</p></div></div>
+      <div class="link" data-by="coach"><div class="idea" data-by="coach"><span class="by coach">coach</span><p>Ngày dự kiến tính từ phương thức giao + ngày xác nhận, tự cập nhật khi đơn tạm giữ / chờ khách.</p></div></div>
+      <div class="link" data-by="coach"><div class="idea" data-by="coach"><span class="by coach">coach</span><p>Trạng thái phụ hiện rõ: “Chờ bạn quyết định” / “Đang xử lý yêu cầu hủy” — có nút hành động ngay đó.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ROLE PLAYING -->
+<section id="nhap-vai">
+  <div class="sec-head"><span class="bin">KỆ 2</span><h2>Nhập vai — năm giọng nói quanh một kiện hàng</h2>
+    <p class="sub">Mỗi người cầm đơn hàng ở một khoảnh khắc khác nhau. Phiên lần lượt đứng vào chỗ của từng người.</p></div>
+
+  <div class="voices">
+    <article class="voice">
+      <header><div class="avatar" aria-hidden="true">📦</div><div><h3>Nhân viên kho mới</h3><small>đứng trước kệ, tay cầm hộp</small></div></header>
+      <div class="bubble" data-by="coach">“Tôi sợ gói nhầm, gửi nhầm địa chỉ.”</div>
+      <ul>
+        <li class="idea" data-by="coach"><span class="by coach">coach</span><p>Danh sách soạn hàng in được (món, kệ, số lượng), tick từng món khi bỏ vào hộp.</p></li>
+      </ul>
+    </article>
+
+    <article class="voice">
+      <header><div class="avatar" aria-hidden="true">😤</div><div><h3>Khách bực</h3><small>mở trang đơn lần thứ ba trong ngày</small></div></header>
+      <div class="bubble" data-by="you">“Tại sao giao trễ quá?”<span class="by you">bạn</span></div>
+      <ul>
+        <li class="idea" data-by="coach"><span class="by coach">coach</span><p>Tự phát hiện trễ hạn → cờ “Trễ hạn” đỏ ở cả màn hình nhân viên lẫn trang khách; bắt buộc ghi lý do trễ + ngày giao mới; báo trễ chủ động.</p></li>
+        <li class="idea" data-by="you"><span class="by you">bạn</span><p>Khách bớt giận khi được <b>BÁO TRƯỚC</b> lý do trễ.</p></li>
+        <li class="idea" data-by="you"><span class="by you">bạn</span><p>Bù đắp đơn trễ bằng <b>mã giảm giá</b> để giữ chân mua lần sau.</p></li>
+        <li class="idea" data-by="coach"><span class="by coach">coach</span><p>Mã theo mức trễ: 1 ngày = freeship, 3+ ngày = giảm %; 1 nút “Gửi lời xin lỗi + mã”.</p></li>
+      </ul>
+    </article>
+
+    <article class="voice">
+      <header><div class="avatar" aria-hidden="true">🧾</div><div><h3>Chủ shop (phản biện)</h3><small>nhìn vào quỹ khuyến mãi</small></div></header>
+      <div class="bubble" data-by="coach">“Phát mã kiểu này thì lạm phát mất.”</div>
+      <ul>
+        <li class="idea" data-by="coach"><span class="by coach">coach</span><p>Giới hạn ngân sách bù đắp/tháng, chỉ áp dụng khi lỗi do shop, có báo cáo tiền đã bù.</p></li>
+      </ul>
+    </article>
+
+    <article class="voice">
+      <header><div class="avatar" aria-hidden="true">🛵</div><div><h3>Shipper</h3><small>đứng trước con hẻm không số nhà</small></div></header>
+      <div class="bubble" data-by="you">“Cho tôi địa chỉ rõ, số điện thoại, và cách chứng minh đã giao.”<span class="by you">bạn</span></div>
+      <ul>
+        <li class="idea" data-by="you"><span class="by you">bạn</span><p>Cần <b>địa chỉ rõ ràng</b>.</p></li>
+        <li class="idea" data-by="you"><span class="by you">bạn</span><p>Cần <b>số điện thoại khách</b> để liên hệ.</p></li>
+        <li class="idea" data-by="you"><span class="by you">bạn</span><p><b>Chụp ảnh khi giao</b> làm bằng chứng.</p></li>
+        <li class="idea" data-by="coach"><span class="by coach">coach</span><p>Phiếu giao 1 trang/đơn: địa chỉ + SĐT + ghi chú + tiền COD + QR; quét → “Đã giao” + chụp ảnh. Ảnh hiện trên trang khách.</p></li>
+        <li class="idea" data-by="coach"><span class="by coach">coach</span><p>Kiểm tra địa chỉ ngay ở checkout; nút giao thất bại riêng → đơn về shop, kho hoàn khi hàng về.</p></li>
+      </ul>
+    </article>
+
+    <article class="voice night">
+      <header><div class="avatar" aria-hidden="true">🌙</div><div><h3>Chủ shop lúc 11h đêm</h3><small>nằm trên giường, mở điện thoại</small></div></header>
+      <div class="phone-dash" aria-label="Bốn con số chủ shop muốn thấy — đều do bạn nêu">
+        <div class="clock">23:00</div>
+        <div class="tiles">
+          <div class="tile you" data-by="you">Doanh thu hôm nay<b>đã thu · đang treo</b></div>
+          <div class="tile you" data-by="you">Đơn chờ xử lý<b>bao nhiêu?</b></div>
+          <div class="tile you" data-by="you">Hàng sắp hết<b>còn ~1.5 ngày</b></div>
+          <div class="tile you" data-by="you">Đơn theo trạng thái<b>đếm từng loại</b></div>
+        </div>
+      </div>
+      <ul>
+        <li class="idea" data-by="coach"><span class="by coach">coach</span><p>Tách doanh thu “đã giao/đã thu” và “đang treo” — tránh ảo tưởng từ đơn rồi bị hủy.</p></li>
+        <li class="idea" data-by="coach"><span class="by coach">coach</span><p>Sắp hết tính theo tốc độ bán (“còn 3, bán 2/ngày → hết ~1.5 ngày”); nút “Đã nhập thêm hàng”.</p></li>
+      </ul>
+      <p class="night-insight">💡 Bốn con số ấy chính là hệ quả của luồng trạng thái + tồn kho chuẩn. Bảng tổng kết đứng sau — nền tảng là dữ liệu đơn/kho đúng.</p>
+    </article>
+  </div>
+</section>
+
+<!-- REVERSE -->
+<section id="dao-nguoc">
+  <div class="sec-head"><span class="bin">KỆ 3</span><h2>Đảo ngược — cách làm hỏng, rồi lật lại</h2>
+    <p class="sub">Bên trái là cách chắc chắn phá nát công cụ. Bấm nút ↻ để lật thành nguyên tắc thiết kế.</p></div>
+
+  <div class="rev-group">
+    <h3>Ca hỏng #1 · Tồn kho</h3>
+    <div class="rev">
+      <div class="bad"><span class="tag">✗ CÁCH LÀM HỎNG</span>
+        <span class="item" data-by="coach"><span class="by coach">coach</span>Hai nhân viên cùng xác nhận một đơn → kho trừ 2 lần, khách nhận 2 thông báo mâu thuẫn</span>
+        <span class="item" data-by="you"><span class="by you">bạn</span>Quên trừ kho khi xác nhận đơn</span>
+        <span class="item" data-by="you"><span class="by you">bạn</span>Kho bị trừ nhân 2 lần cho cùng một đơn</span>
+      </div>
+      <div class="flip"><button class="flip-btn" aria-label="Lật lại ca hỏng tồn kho">↻</button></div>
+      <div class="good"><span class="tag">✓ LẬT LẠI</span>
+        <span class="item" data-by="coach"><span class="by coach">coach</span>Trừ kho gắn chặt vào chuyển trạng thái: xác nhận và trừ kho xảy ra cùng lúc hoặc không gì cả (nguyên tử)</span>
+        <span class="item" data-by="coach"><span class="by coach">coach</span>Chỉ chuyển từ đúng trạng thái trước; bấm lần 2 bị từ chối “Đơn đã được xác nhận bởi An lúc 9:15”</span>
+        <span class="item" data-by="coach"><span class="by coach">coach</span>Sổ kho: mỗi thay đổi là 1 dòng gắn mã đơn; tồn kho = tổng các dòng, đối chiếu được</span>
+      </div>
+    </div>
+    <div class="decision"><span class="stamp">Ứng viên</span><p>Trừ kho phải gắn chặt (nguyên tử) với chuyển trạng thái xác nhận — giải luôn nỗi sợ oversell của chủ shop.</p></div>
+  </div>
+
+  <div class="rev-group">
+    <h3>Ca hỏng #2 · Trang theo dõi</h3>
+    <div class="rev">
+      <div class="bad"><span class="tag">✗ CÁCH LÀM HỎNG</span>
+        <span class="item" data-by="you"><span class="by you">bạn</span>Trang theo dõi hiện trạng thái sai</span>
+        <span class="item" data-by="you"><span class="by you">bạn</span>Trạng thái cập nhật chậm</span>
+        <span class="item" data-by="you"><span class="by you">bạn</span>Hứa ngày giao không đúng</span>
+      </div>
+      <div class="flip"><button class="flip-btn" aria-label="Lật lại ca hỏng trang theo dõi">↻</button></div>
+      <div class="good"><span class="tag">✓ LẬT LẠI</span>
+        <span class="item" data-by="coach"><span class="by coach">coach</span>Một nguồn sự thật: trang khách và màn hình nhân viên đọc cùng một bản ghi đơn</span>
+        <span class="item" data-by="coach"><span class="by coach">coach</span>“Cập nhật lần cuối: 10 phút trước”; trạng thái đứng yên quá lâu tự cảnh báo nhân viên</span>
+        <span class="item" data-by="coach"><span class="by coach">coach</span>Hứa khoảng ngày (“20–22/11”) sau khi xác nhận; đổi ngày thì gạch ngang ngày cũ + lý do</span>
+        <span class="item" data-by="coach"><span class="by coach">coach</span>Lịch sử trạng thái: ai đổi, lúc nào — cho khách xem mốc, cho shop truy vết</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="rev-group">
+    <h3>Ca hỏng #3 · Thao tác & dữ liệu nhập</h3>
+    <div class="rev">
+      <div class="bad"><span class="tag">✗ CÁCH LÀM HỎNG</span>
+        <span class="item" data-by="you"><span class="by you">bạn</span>Quá nhiều bước bấm</span>
+        <span class="item" data-by="you"><span class="by you">bạn</span>Giao diện rối</span>
+        <span class="item" data-by="you"><span class="by you">bạn</span>Chậm trên điện thoại</span>
+        <span class="item" data-by="you"><span class="by you">bạn</span>Dễ gõ nhầm số</span>
+        <span class="item" data-by="you"><span class="by you">bạn</span>Sai địa chỉ</span>
+        <span class="item" data-by="you"><span class="by you">bạn</span>Sai số điện thoại</span>
+      </div>
+      <div class="flip"><button class="flip-btn" aria-label="Lật lại ca hỏng thao tác">↻</button></div>
+      <div class="good"><span class="tag">✓ LẬT LẠI</span>
+        <span class="item" data-by="coach"><span class="by coach">coach</span>Mỗi hành động chính = 1 chạm; xác nhận hàng loạt nhiều đơn xanh</span>
+        <span class="item" data-by="coach"><span class="by coach">coach</span>Chỉ hiện nút hợp lệ với trạng thái hiện tại (pending chỉ có Xác nhận/Hủy)</span>
+        <span class="item" data-by="coach"><span class="by coach">coach</span>Mobile-first: nút to, danh sách nhẹ, không bảng nhiều cột</span>
+        <span class="item" data-by="coach"><span class="by coach">coach</span>Hạn chế gõ tay: nút +/-, lý do chọn từ danh sách, không sửa giá/số lượng</span>
+        <span class="item" data-by="coach"><span class="by coach">coach</span>Validate SĐT (10 số, đầu 0) và địa chỉ đủ phần ngay ở checkout</span>
+        <span class="item" data-by="coach"><span class="by coach">coach</span>Hoàn tác trong 10 giây thay cho hộp thoại “Bạn có chắc?”</span>
+      </div>
+    </div>
+    <p class="insight-strip">💡 Nhân viên dùng điện thoại là chính — công cụ phải nhanh, ít gõ, ít bước; lỗi dữ liệu nên chặn từ checkout.</p>
+  </div>
+</section>
+
+<!-- HMW -->
+<section id="hmw">
+  <div class="sec-head"><span class="bin">KỆ 4</span><h2>How Might We — bốn vé câu hỏi</h2>
+    <p class="sub">Ba trong bốn câu hỏi “Làm sao để…” là của bạn. Coach gợi ý #4 — bạn chọn #2, và giữ đúng lựa chọn đó.</p></div>
+
+  <div class="tickets">
+    <div class="ticket" data-by="coach"><span class="no">HMW #1</span><span class="by coach">coach</span>Làm sao để chủ shop xác nhận đơn nhanh như một nút bấm mà không bao giờ bán vượt tồn kho?</div>
+    <div class="ticket chosen" data-by="you"><span class="no">HMW #2</span><span class="by you">bạn</span>Làm sao để <b>khách nắm thông tin chủ yếu về đơn</b> một cách nhanh, gọn, chính xác — không lan man?<span class="stamp">Bạn chọn</span></div>
+    <div class="ticket" data-by="you"><span class="no">HMW #3</span><span class="by you">bạn</span>Làm sao để nhân viên thấy kết quả thao tác nhanh nhất?</div>
+    <div class="ticket hint" data-by="you"><span class="no">HMW #4</span><span class="by you">bạn</span>Làm sao hiển thị cho chủ shop biết đơn nào cần phải xử lý?<br><span class="hint-tag">← coach gợi ý vé này</span></div>
+  </div>
+  <p class="insight-strip">💡 Ba HMW của bạn cùng một mẫu: <b>ít thông tin hơn nhưng đúng hơn</b> — mỗi người chỉ thấy đúng thứ họ cần hành động tiếp.</p>
+
+  <div class="hmw-layout">
+    <div>
+      <div class="phone">
+        <div class="screen" id="screen">
+          <div class="bar"><span>9:41</span><span>ShopLite</span><span>▮▮▮</span></div>
+          <div class="sh">Đơn #SL-1024</div>
+          <div class="one-line">Đơn của bạn đang được giao, dự kiến đến <b>20–22/11</b>.</div>
+          <div class="alert-band" aria-live="polite"><div>⚠ Món tai nghe đang thiếu hàng. <b>Chờ bạn quyết định.</b><br><button type="button" tabindex="-1">Chọn cách xử lý</button></div></div>
+          <div class="three">
+            <div><span class="n">1</span><span><small>Trạng thái hiện tại</small><b>Đang giao</b>
+              <span class="mini-progress" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></span></div>
+            <div><span class="n">2</span><span><small>Ngày dự kiến giao</small><b>20–22/11</b></span></div>
+            <div><span class="n">3</span><span><small>Tổng tiền</small><b>Thanh toán khi nhận: 1.250.000đ</b></span></div>
+          </div>
+          <div class="folded">▾ Chi tiết món, địa chỉ, lịch sử — gập lại bên dưới</div>
+        </div>
+      </div>
+      <button class="demo-btn" id="demo" aria-pressed="false">Thử: khi khách cần hành động</button>
+    </div>
+    <div class="hmw-notes">
+      <div class="idea" data-by="you"><span class="by you">bạn · quyết định</span><p>3 thông tin trên màn hình đầu khi khách mở đơn: <b>trạng thái hiện tại, ngày dự kiến giao, tổng tiền</b>.</p></div>
+      <div class="idea" data-by="coach"><span class="by coach">coach</span><p><b>Quy tắc 1 câu:</b> đầu trang chỉ có 1 câu trả lời câu hỏi lớn nhất của khách; mọi thứ khác gập lại bên dưới.</p></div>
+      <div class="idea" data-by="coach"><span class="by coach">coach</span><p>Tổng tiền kèm trạng thái thanh toán: “Thanh toán khi nhận: 1.250.000đ” hay “Đã thanh toán” — khách biết có cần chuẩn bị tiền mặt không.</p></div>
+      <div class="idea" data-by="coach"><span class="by coach">coach</span><p><b>Ngoại lệ duy nhất:</b> khi khách cần hành động (chọn hàng thay thế, đơn trễ) thì thêm 1 dải cảnh báo kèm nút. Ngoài ra giữ đúng 3 thông tin.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CONVERGE -->
+<section id="hoi-tu">
+  <div class="sec-head"><span class="bin">KỆ 5</span><h2>Hội tụ — xếp lên kệ, đóng thùng</h2>
+    <p class="sub">Bạn gọi chuyển sang hội tụ. Mọi ý được gom thành 9 ngăn, rồi đóng vào 4 thùng MoSCoW.</p></div>
+
+  <div class="shelf">
+    <div class="bins">
+      <div class="binbox core"><b>A</b><span>Luồng trạng thái</span></div>
+      <div class="binbox core"><b>B</b><span>Tồn kho chính xác</span></div>
+      <div class="binbox"><b>C</b><span>Màn hình nhân viên</span></div>
+      <div class="binbox"><b>D</b><span>Trang theo dõi của khách</span></div>
+      <div class="binbox"><b>E</b><span>Hủy đơn</span></div>
+      <div class="binbox"><b>F</b><span>Thiếu hàng</span></div>
+      <div class="binbox"><b>G</b><span>Trễ hạn & bù đắp</span></div>
+      <div class="binbox"><b>H</b><span>Giao hàng / shipper</span></div>
+      <div class="binbox"><b>I</b><span>Bảng tổng kết chủ shop</span></div>
+    </div>
+  </div>
+
+  <div class="crates">
+    <div class="crate must"><h3>MUST <span>5</span></h3><ul>
+      <li>Chuyển trạng thái đúng thứ tự + nút theo trạng thái</li>
+      <li>Trừ kho nguyên tử khi xác nhận, chặn oversell</li>
+      <li>Hoàn kho khi hủy</li>
+      <li>Hàng đợi đơn cần xử lý, mobile-first</li>
+      <li>Trang khách 3 thông tin + thanh tiến trình có mốc giờ</li></ul></div>
+    <div class="crate should"><h3>SHOULD <span>6</span></h3><ul>
+      <li>Lịch sử trạng thái / sổ kho</li>
+      <li>Ngày dự kiến dạng khoảng</li>
+      <li>Cảnh báo đơn đứng yên / trễ</li>
+      <li>Yêu cầu hủy khi đã xác nhận</li>
+      <li>Shop hủy có lý do</li>
+      <li>Đếm đơn theo trạng thái + hàng sắp hết</li></ul></div>
+    <div class="crate could"><h3>COULD <span>5</span></h3><ul>
+      <li>Xác nhận hàng loạt</li>
+      <li>Hoàn tác 10 giây</li>
+      <li>Phiếu giao in</li>
+      <li>Thống kê lý do hủy</li>
+      <li>Doanh thu tách</li></ul></div>
+    <div class="crate wont"><h3>WON'T lần này <span>5</span></h3><ul>
+      <li>Hàng thay thế / giao từng phần</li>
+      <li>Mã giảm giá bù đắp</li>
+      <li>App shipper QR + ảnh</li>
+      <li>Tạm giữ tự hủy 24h</li>
+      <li>Thông báo chủ động</li></ul>
+      <p class="why">Để dành cho sau — dự án chưa có dịch vụ ngoài / email.</p></div>
+  </div>
+  <div class="approve" data-by="you"><span class="stamp">OK</span><span><span class="by you">bạn</span> duyệt nguyên phạm vi coach đề xuất, không thay đổi.</span></div>
+</section>
+
+<!-- SYNTHESIS -->
+<section id="ket-luan">
+  <div class="climax">
+    <div class="overline">Trạng thái phiên: Đã giao ✓ · Kết luận</div>
+    <p class="big-quote">“<mark>Tồn kho đúng</mark> là nền tảng, phải làm trước.”</p>
+    <div class="who"><span class="by you">bạn</span><span>— kết luận của chính bạn, sau khi nhìn lại cả 9 ngăn.</span></div>
+
+    <div class="stack" aria-label="Mọi tính năng xếp chồng lên nền trạng thái đơn và tồn kho">
+      <div class="row"><span class="box">Bảng 11h đêm</span><span class="box">Bù đắp trễ</span><span class="box">App shipper</span></div>
+      <div class="row"><span class="box lvl2">Hủy đơn</span><span class="box lvl2">Cảnh báo trễ</span><span class="box lvl2">Trang khách 3 thông tin</span><span class="box lvl2">Hàng đợi nhân viên</span></div>
+      <div class="foundation">TRẠNG THÁI ĐƠN + TỒN KHO<small>xác nhận = trừ · hủy = hoàn · một nguồn sự thật</small></div>
+      <div class="ground"></div>
+    </div>
+    <p class="stack-cap">Mọi thùng hàng phía trên chỉ đứng vững khi lớp dưới cùng đúng.</p>
+
+    <div class="overline" style="margin-top:10px">Bốn sợi dây coach nối lại <span class="by coach" style="margin-left:6px">coach</span></div>
+    <div class="links4">
+      <div class="conn"><div class="num">1</div><h4>Trạng thái đơn và tồn kho là MỘT việc</h4><p>Mỗi lần chuyển trạng thái là một sự kiện kho (xác nhận = trừ, hủy = hoàn) — nên làm chung một chỗ.</p><div class="pair"><span>A Luồng trạng thái</span><span>B Tồn kho</span></div></div>
+      <div class="conn"><div class="num">2</div><h4>Kho chỉ đổi khi hàng thật đổi</h4><p>Ý “giữ hàng → gọi khách → mới hoàn kho” <b style="color:#ffc93c">của bạn</b> chính là nguyên tắc này — cùng gốc với hoàn kho khi hàng giao thất bại về tới shop.</p><div class="pair"><span>E Hủy đơn</span><span>H Giao hàng</span></div></div>
+      <div class="conn"><div class="num">3</div><h4>Cùng một dữ liệu, nhìn từ hai phía</h4><p>“Đơn nào cần xử lý” (HMW #4) và “3 thông tin cho khách” (HMW #2) — đều là câu hỏi của bạn — là cùng một bản ghi đơn.</p><div class="pair"><span>C Nhân viên</span><span>D Trang khách</span></div></div>
+      <div class="conn"><div class="num">4</div><h4>Lời hứa ngày giao cần trạng thái đúng lúc</h4><p>“Tại sao giao trễ?” và “hứa sai ngày” là một vấn đề — lại quay về nền tảng.</p><div class="pair"><span>G Trễ hạn</span><span>D Trang khách</span></div></div>
+    </div>
+
+    <div class="answer">
+      <div class="rcpt-head"><b>HÓA ĐƠN TRẢ LỜI</b><small>Cho mục tiêu: “làm gì, cho ai, điều gì quan trọng nhất”</small></div>
+      <table>
+        <tr><th>Cho ai</th><td><ul>
+          <li><b>Chủ shop</b> — người dùng chính: xác nhận nhanh, không sợ oversell</li>
+          <li><b>Nhân viên</b> — thao tác trên điện thoại: nhanh, ít gõ, ít bước</li>
+          <li><b>Khách</b> — mở đơn là biết ngay: trạng thái, ngày giao, tổng tiền</li></ul></td></tr>
+        <tr><th>Làm gì</th><td><ul>
+          <li>Chuyển trạng thái đúng thứ tự, nút theo trạng thái</li>
+          <li>Trừ kho nguyên tử khi xác nhận; hoàn kho khi hủy</li>
+          <li>Hàng đợi đơn cần xử lý, mobile-first</li>
+          <li>Trang khách 3 thông tin + thanh tiến trình có mốc giờ</li></ul></td></tr>
+        <tr class="hl"><th>Quan trọng nhất</th><td><b>Tồn kho đúng — làm nền tảng trạng thái đơn + tồn kho trước</b> (5 mục MUST); các tính năng khác xây lên sau.</td></tr>
+      </table>
+      <div class="rcpt-foot">
+        <div>77 đóng góp · 4 kỹ thuật · 9 cụm · 5 MUST</div>
+        <div class="barcode" aria-hidden="true"></div>
+        <div>CẢM ƠN BẠN ĐÃ XÂY CÙNG ★</div>
+      </div>
+      <div class="zigzag" aria-hidden="true"></div>
+    </div>
+
+    <div class="final-decision"><span class="stamp">Hướng chốt</span><p>Làm nền tảng trạng thái đơn + tồn kho trước — 5 mục MUST — rồi mọi thứ khác xây lên trên.</p></div>
+  </div>
+</section>
+</main>
+
+<footer>ShopLite · brainstorm-cong-cu-van-hanh-don-hang · 21/11/2026 · pending → delivered</footer>
+
+<script>
+(function(){
+  var only=document.getElementById('onlyYou');
+  only.addEventListener('change',function(){document.body.classList.toggle('only-you',only.checked)});
+
+  document.querySelectorAll('.flip-btn').forEach(function(b){
+    b.addEventListener('click',function(){b.closest('.rev').classList.toggle('flipped')});
+  });
+
+  var demo=document.getElementById('demo'),screen=document.getElementById('screen');
+  demo.addEventListener('click',function(){
+    var on=screen.classList.toggle('need-action');
+    demo.setAttribute('aria-pressed',on);
+    demo.textContent=on?'Quay về: giữ đúng 3 thông tin':'Thử: khi khách cần hành động';
+  });
+
+  var ids=['boi-canh','yes-and','nhap-vai','dao-nguoc','hmw','hoi-tu','ket-luan'];
+  var items=document.querySelectorAll('#track li');
+  function update(){
+    var y=window.scrollY+window.innerHeight*0.35,cur=-1;
+    ids.forEach(function(id,i){var el=document.getElementById(id);if(el&&el.offsetTop<=y)cur=i;});
+    if(window.innerHeight+window.scrollY>=document.body.scrollHeight-4)cur=ids.length-1;
+    items.forEach(function(li,i){li.classList.toggle('done',i<cur||(cur===ids.length-1&&i===cur));li.classList.toggle('now',i===cur&&cur!==ids.length-1);});
+  }
+  window.addEventListener('scroll',update,{passive:true});update();
+})();
+</script>
+</body>
+</html>

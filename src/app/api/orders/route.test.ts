@@ -33,6 +33,14 @@ describe("POST /api/orders", () => {
     expect(order).toMatchObject({ status: "pending", subtotal: 450_000, shippingFee: 60_000 });
   });
 
+  it("201 - response có statusHistory với dòng tạo đơn của khách", async () => {
+    const response = await postOrder(validBody);
+    const order = await response.json();
+    expect(order.statusHistory).toEqual([
+      { from: null, to: "pending", at: order.createdAt, actor: { kind: "customer" } },
+    ]);
+  });
+
   it("400 - body không phải JSON", async () => {
     const response = await postOrder("{oops");
     expect(response.status).toBe(400);

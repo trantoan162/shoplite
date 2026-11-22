@@ -44,24 +44,29 @@ export function getAllProducts(): Product[] {
   return products;
 }
 
-export function getProductBySlug(slug: string): Product | undefined {
-  return products.find((product) => product.slug === slug);
+/** `source`: danh sách sản phẩm cần tra (mặc định catalog tĩnh; server truyền bản có tồn kho thật). */
+export function getProductBySlug(slug: string, source: Product[] = products): Product | undefined {
+  return source.find((product) => product.slug === slug);
 }
 
 export function getProductById(id: string): Product | undefined {
   return products.find((product) => product.id === id);
 }
 
-export function getFeaturedProducts(limit = 4): Product[] {
-  return products
+export function getFeaturedProducts(limit = 4, source: Product[] = products): Product[] {
+  return source
     .filter((product) => product.featured)
     .sort((a, b) => b.rating - a.rating)
     .slice(0, limit);
 }
 
 /** Sản phẩm cùng danh mục (trừ chính nó), ưu tiên đánh giá cao. */
-export function getRelatedProducts(product: Product, limit = 4): Product[] {
-  return products
+export function getRelatedProducts(
+  product: Product,
+  limit = 4,
+  source: Product[] = products,
+): Product[] {
+  return source
     .filter((item) => item.categorySlug === product.categorySlug && item.id !== product.id)
     .sort((a, b) => b.rating - a.rating)
     .slice(0, limit);
