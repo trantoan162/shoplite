@@ -5,21 +5,30 @@ on:
     branches: [main, bmad/module78]
     types: [opened, synchronize, reopened]
 
+# Chỉ một lượt review cho mỗi PR; push mới thì hủy lượt cũ.
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   ai-review:
+    # Repo public + runner tự host: không chạy code/prompt từ PR của fork trên máy nhà.
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: self-hosted
+    timeout-minutes: 20
     permissions:
       contents: read
       pull-requests: write
       issues: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          fetch-depth: 1
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Run Claude Code Review
-        uses: anthropics/claude-code-action@v1.0.259
+        uses: anthropics/claude-code-action@ae68417a745a5df4b2124873632bd73a2255e6f6 # v1.0.259
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           claude_code_oauth_token: ${{ secrets.KHOAHOCAI2 }}
