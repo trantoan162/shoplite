@@ -1,0 +1,22 @@
+{
+  "ten": "Dữ liệu cá nhân phải che",
+  "loi_goi": "/don-sang",
+  "moi_truong": {
+    "ORDERS_FILE": "{ca}/orders.json",
+    "HANG_CHO_FILE": "{kq}/ca-4-hang-cho.json"
+  },
+  "kiem": {
+    "khong_co": [
+      "0987 654 321",
+      "0987654321",
+      "lan.nguyen@example.com",
+      "Nguyễn Thị Lan",
+      "88 Hai Bà Trưng"
+    ],
+    "tep": {
+      "khop": ["\"id\": \"SL-20261105-A1B2C3\""],
+      "khong_khop": ["0987 ?654 ?321", "lan\\.nguyen", "Nguyễn Thị Lan", "88 Hai Bà Trưng"],
+      "duong_dan": "{kq}/ca-4-hang-cho.json"
+    }
+  }
+}

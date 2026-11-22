@@ -1,0 +1,40 @@
+[
+  {
+    "id": "SL-20261105-FF0001",
+    "status": "delivered",
+    "createdAt": "2026-11-05T01:00:00.000Z",
+    "paymentMethod": "cod",
+    "total": 1290000,
+    "customer": {
+      "fullName": "Trần Văn Bình",
+      "phone": "0912345678",
+      "address": "12 Lê Lợi, Quận 1, TP.HCM",
+      "note": ""
+    },
+    "items": [
+      {
+        "name": "Bàn phím cơ",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "SL-20261105-FF0002",
+    "status": "cancelled",
+    "createdAt": "2026-11-05T01:00:00.000Z",
+    "paymentMethod": "cod",
+    "total": 1290000,
+    "customer": {
+      "fullName": "Trần Văn Bình",
+      "phone": "0912345678",
+      "address": "12 Lê Lợi, Quận 1, TP.HCM",
+      "note": "Giao nhanh giúp"
+    },
+    "items": [
+      {
+        "name": "Bàn phím cơ",
+        "quantity": 1
+      }
+    ]
+  }
+]

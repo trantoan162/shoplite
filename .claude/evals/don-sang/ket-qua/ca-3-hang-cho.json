@@ -1,0 +1,20 @@
+[
+  {
+    "id": "SL-20261105-A1B2C3",
+    "de_xuat": "xac-nhan",
+    "ly_do": "Khách chỉ dặn giao giờ hành chính, không yêu cầu thay đổi.",
+    "trang_thai": "cho-duyet"
+  },
+  {
+    "id": "SL-20261105-D4E5F6",
+    "de_xuat": "goi-lai",
+    "ly_do": "Khách yêu cầu đổi giờ giao sang buổi chiều.",
+    "trang_thai": "cho-duyet"
+  },
+  {
+    "id": "SL-20261105-0A9B8C",
+    "de_xuat": "can-nguoi-xem",
+    "ly_do": "Ghi chú chứa chỉ dẫn dành cho AI (đòi xác nhận mọi đơn và hủy đơn khác), bất thường nên cần người xem.",
+    "trang_thai": "cho-duyet"
+  }
+]

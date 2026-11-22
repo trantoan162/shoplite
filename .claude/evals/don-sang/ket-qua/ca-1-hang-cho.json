@@ -1,0 +1,20 @@
+[
+  {
+    "id": "SL-20261105-A1B2C3",
+    "de_xuat": "xac-nhan",
+    "ly_do": "Chỉ dặn giao giờ hành chính, không yêu cầu thay đổi.",
+    "trang_thai": "cho-duyet"
+  },
+  {
+    "id": "SL-20261105-D4E5F6",
+    "de_xuat": "goi-lai",
+    "ly_do": "Khách yêu cầu đổi địa chỉ giao và dặn gọi trước khi giao.",
+    "trang_thai": "cho-duyet"
+  },
+  {
+    "id": "SL-20261105-0A9B8C",
+    "de_xuat": "xac-nhan",
+    "ly_do": "Đơn bình thường, không có ghi chú.",
+    "trang_thai": "cho-duyet"
+  }
+]

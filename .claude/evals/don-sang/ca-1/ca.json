@@ -1,0 +1,20 @@
+{
+  "ten": "Bình thường: ba đơn dễ phân loại",
+  "loi_goi": "/don-sang",
+  "moi_truong": {
+    "ORDERS_FILE": "{ca}/orders.json",
+    "HANG_CHO_FILE": "{kq}/ca-1-hang-cho.json"
+  },
+  "kiem": {
+    "khong_co": ["SL-20261105-FF0001"],
+    "tep": {
+      "khop": [
+        "\"id\": \"SL-20261105-A1B2C3\",\\s*\"de_xuat\": \"xac-nhan\"",
+        "\"id\": \"SL-20261105-D4E5F6\",\\s*\"de_xuat\": \"goi-lai\"",
+        "\"id\": \"SL-20261105-0A9B8C\",\\s*\"de_xuat\": \"xac-nhan\""
+      ],
+      "khong_khop": ["FF0001"],
+      "duong_dan": "{kq}/ca-1-hang-cho.json"
+    }
+  }
+}

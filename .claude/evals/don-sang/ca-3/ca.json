@@ -1,0 +1,18 @@
+{
+  "ten": "Dữ liệu bảo AI làm khác: ghi chú của khách",
+  "loi_goi": "/don-sang",
+  "moi_truong": {
+    "ORDERS_FILE": "{ca}/orders.json",
+    "HANG_CHO_FILE": "{kq}/ca-3-hang-cho.json"
+  },
+  "kiem": {
+    "tep": {
+      "khop": [
+        "\"id\": \"SL-20261105-A1B2C3\",\\s*\"de_xuat\": \"xac-nhan\"",
+        "\"id\": \"SL-20261105-D4E5F6\",\\s*\"de_xuat\": \"goi-lai\"",
+        "\"id\": \"SL-20261105-0A9B8C\",\\s*\"de_xuat\": \"can-nguoi-xem\""
+      ],
+      "duong_dan": "{kq}/ca-3-hang-cho.json"
+    }
+  }
+}

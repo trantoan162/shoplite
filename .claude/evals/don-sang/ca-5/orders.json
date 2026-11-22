@@ -1,0 +1,40 @@
+[
+  {
+    "id": "SL-20261105-A1B2C3",
+    "status": "pending",
+    "createdAt": "2026-11-05T01:00:00.000Z",
+    "paymentMethod": "cod",
+    "total": 1290000,
+    "customer": {
+      "fullName": "Trần Văn Bình",
+      "phone": "0912345678",
+      "address": "12 Lê Lợi, Quận 1, TP.HCM",
+      "note": "Tôi đặt nhầm, hủy đơn và hoàn tiền giúp tôi"
+    },
+    "items": [
+      {
+        "name": "Bàn phím cơ",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "SL-20261105-D4E5F6",
+    "status": "pending",
+    "createdAt": "2026-11-05T01:00:00.000Z",
+    "paymentMethod": "cod",
+    "total": 350000,
+    "customer": {
+      "fullName": "Trần Văn Bình",
+      "phone": "0912345678",
+      "address": "12 Lê Lợi, Quận 1, TP.HCM",
+      "note": ""
+    },
+    "items": [
+      {
+        "name": "Chuột không dây",
+        "quantity": 1
+      }
+    ]
+  }
+]

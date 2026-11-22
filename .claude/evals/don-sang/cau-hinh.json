@@ -1,0 +1,32 @@
+{
+  "cong_cu": "claude",
+  "van_tay_them": [
+    "scripts/agent/mcp-don-hang.mjs"
+  ],
+  "co": [
+    "--model",
+    "sonnet",
+    "--output-format",
+    "json",
+    "--permission-mode",
+    "dontAsk",
+    "--setting-sources",
+    "project",
+    "--strict-mcp-config",
+    "--mcp-config",
+    ".claude/evals/don-sang/mcp.json",
+    "--tools",
+    "Read",
+    "--allowedTools",
+    "mcp__shoplite-don__liet_ke_don_cho",
+    "mcp__shoplite-don__de_xuat_xu_ly",
+    "--disallowedTools",
+    "Read(./storage/**)",
+    "Read(./.env)",
+    "Read(./.env.*)",
+    "--max-turns",
+    "12",
+    "--max-budget-usd",
+    "0.30"
+  ]
+}

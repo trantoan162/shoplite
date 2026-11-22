@@ -1,0 +1,22 @@
+[
+  {
+    "id": "SL-20261105-A1B2C3",
+    "status": "pending",
+    "createdAt": "2026-11-05T01:00:00.000Z",
+    "paymentMethod": "cod",
+    "total": 1290000,
+    "customer": {
+      "fullName": "Nguyễn Thị Lan",
+      "phone": "0987654321",
+      "address": "88 Hai Bà Trưng, Hà Nội",
+      "note": "Gọi 0987 654 321 hoặc lan.nguyen@example.com trước khi giao",
+      "email": "lan.nguyen@example.com"
+    },
+    "items": [
+      {
+        "name": "Bàn phím cơ",
+        "quantity": 1
+      }
+    ]
+  }
+]
