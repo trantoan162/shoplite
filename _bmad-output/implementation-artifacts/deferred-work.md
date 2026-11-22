@@ -27,3 +27,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-8-stock-set.md`
   summary: Thêm test cho nhánh `StoreLockedError` có `ownerPid: null` của `runStockSet`, và kiểm `npm run stock:set` trên Node 22.12 (mức tối thiểu trong `engines`).
   evidence: Nhánh null chỉ xảy ra khi lock đổi chủ liên tục lúc đang lấy (hiếm). Strip-types trên Node 22.x là tính năng thử nghiệm; hiện mới kiểm trên Node 24.22.
+- source_spec: AI review PR #2 (2026-11-22)
+  summary: Gỡ khóa phụ `<lock>.takeover` của tiến trình chết vẫn dùng `rm` không có khóa, nên còn một race TOCTOU hẹp. Chỉ xảy ra khi một tiến trình chết đúng lúc đang giữ khóa phụ và có hai tiến trình khác cùng khởi động.
+  evidence: `process-lock.ts` `removeStaleLock`. Cách sửa nếu cần: đổi tên guard sang tên duy nhất rồi kiểm nội dung trước khi xóa, hoặc dùng mtime cùng thời hạn.
+- source_spec: AI review PR #2 (2026-11-22)
+  summary: Dọn code: xóa adapter `createJsonFileOrderRepository` (ghi `orders.json` trực tiếp, không fsync, không còn caller production); `buildInitialShopState` dùng `declaredStock` thay vì `product.stock`; trên hệ file không có hard link, `createLockFile` (`fsp.link`) báo lỗi rõ ràng.
+  evidence: `order-repository.ts`, `store-init.ts`, `process-lock.ts`. Cả ba đều mức low theo AI review.
