@@ -12,7 +12,6 @@ jobs:
       contents: read
       pull-requests: write
       issues: write
-      id-token: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,6 +21,7 @@ jobs:
       - name: Run Claude Code Review
         uses: anthropics/claude-code-action@v1.0.259
         with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           claude_code_oauth_token: ${{ secrets.KHOAHOCAI2 }}
           path_to_claude_code_executable: /home/runner/.local/bin/claude
           prompt: |
