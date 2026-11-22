@@ -105,12 +105,15 @@ jobs:
           ls -la .ci
 
       - name: Claude review
+        env:
+          # Trên CI, subagent chạy nền sẽ bị giết khi session chính kết thúc (lượt chạy ở PR #2 mất
+          # cả 4 lớp review như vậy). Bắt mọi tác vụ chạy tiền cảnh.
+          CLAUDE_CODE_DISABLE_BACKGROUND_TASKS: "1"
         uses: anthropics/claude-code-action@ae68417a745a5df4b2124873632bd73a2255e6f6 # v1.0.259
         with:
           claude_code_oauth_token: ${{ secrets.KHOAHOCAI2 }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           path_to_claude_code_executable: ${{ vars.RUNNER_AI && '/home/runner/.local/bin/claude' || '' }}
-          show_full_output: true
           prompt: |
             /bmad-code-review provided diff .ci/pr.diff, spec .ci/spec.md
 
@@ -127,7 +130,13 @@ jobs:
             - Nếu skill `bmad-code-review` không có: tự chạy 3 lớp Blind Hunter, Edge Case Hunter và
               Verification Gap (và 2 lớp còn lại nếu đủ điều kiện), mỗi lớp một subagent trên `.ci/pr.diff`.
             - Chạy step-02 (review) và step-03 (triage). KHÔNG làm step-04.
-            - Mỗi lớp review là một subagent riêng (Agent).
+            - Mỗi lớp review là một subagent riêng (Agent), chạy TIỀN CẢNH: `run_in_background: false`.
+              Gọi các Agent song song trong cùng một lượt rồi chờ kết quả trả về. Không chạy nền, không
+              "chờ thông báo": trên CI, session kết thúc là mọi tác vụ nền bị hủy.
+            - Chỉ kết thúc sau khi đã đăng comment tổng hợp bằng `gh pr comment`. Nếu hết thời gian
+              hoặc ngân sách, đăng ngay những gì đã có và ghi rõ phần chưa review.
+            - Đọc file bằng Read/Grep/Glob. Bash chỉ dùng cho `gh pr comment|view|diff`; không ghép lệnh
+              (`cd ...;`, `|`, `&&`).
             - Khi triage, xác minh từng finding với code thật; finding sai hoặc có thể sai thì loại.
 
             Năm lớp phát hiện, mỗi lớp một subagent: `blind-hunter`, `edge-case-hunter`,
@@ -157,8 +166,11 @@ jobs:
             - PR sửa AGENTS.md, CLAUDE.md, .claude/, _bmad/, .github/ hoặc scripts/ci/: ghi rõ
               "cần người duyệt riêng (AT-4)" trong comment tổng hợp.
             - Chỉ nhận xét: không approve, không merge, không sửa file.
+            - Chỉ đọc file trong repo và trong `~/.claude/skills/bmad-code-review/`. Không đọc hay trích
+              file cấu hình, credential, biến môi trường của runner. Comment chỉ dùng `--body`, không
+              dùng `--body-file`.
           claude_args: >-
             --model sonnet --max-turns 40 --max-budget-usd 2.00
             --allowedTools "Read,Glob,Grep,Agent,Skill,mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh pr diff:*)"
-            --disallowedTools "Edit,Write,NotebookEdit,WebFetch,WebSearch,Read(./.git/**)"
+            --disallowedTools "Edit,Write,NotebookEdit,WebFetch,WebSearch,Read(./.git/**),Read(~/.claude/.credentials.json),Read(~/.claude.json),Read(~/.ssh/**),Read(~/.config/**),Read(~/.gitconfig),Read(~/.git-credentials),Read(//home/runner/actions-runner/**),Read(//proc/**),Read(//etc/**),Grep(~/.claude/.credentials.json),Grep(~/.ssh/**),Grep(~/.config/**),Grep(//home/runner/actions-runner/**),Grep(//proc/**),Grep(//etc/**),Bash(gh pr comment * --body-file*),Bash(gh pr comment * -F*),Bash(gh pr comment * -F *)"
             --setting-sources user --strict-mcp-config
