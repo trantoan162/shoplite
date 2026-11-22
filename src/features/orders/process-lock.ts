@@ -70,6 +70,14 @@ function parsePid(content: string): number | null {
   return pid > 0 ? pid : null;
 }
 
+/** Lỗi khi file đang bị tiến trình khác tạo/xóa (Windows trả EPERM/EACCES/EBUSY cho file đang xóa). */
+const TRANSIENT_CODES = new Set(["EPERM", "EACCES", "EBUSY"]);
+
+function isContended(error: unknown): boolean {
+  const code = (error as NodeJS.ErrnoException).code ?? "";
+  return code === "EEXIST" || (process.platform === "win32" && TRANSIENT_CODES.has(code));
+}
+
 /**
  * Tạo lock với nội dung đầy đủ trong một bước: ghi PID ra file tạm rồi `link` sang tên lock
  * (`link` thất bại với EEXIST nếu lock đã có). Người đọc không bao giờ thấy lock rỗng.
@@ -81,31 +89,81 @@ async function createLockFile(lockFile: string, pid: number): Promise<boolean> {
     await fsp.link(temp, lockFile);
     return true;
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "EEXIST") return false;
+    if (isContended(error)) return false;
     throw error;
   } finally {
     await fsp.rm(temp, { force: true });
   }
 }
 
-async function readOwner(lockFile: string): Promise<number | null> {
+/** `undefined`: không có file lock; `null`: có file nhưng nội dung không phải PID. */
+async function readLock(lockFile: string): Promise<number | null | undefined> {
   try {
     return parsePid(await fsp.readFile(lockFile, "utf8"));
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    const code = (error as NodeJS.ErrnoException).code ?? "";
+    // ENOENT: không có lock. EPERM/EACCES/EBUSY (Windows): file đang bị xóa — coi như chưa thấy,
+    // caller sẽ thử lại; mọi quyết định xóa đều đọc lại khi giữ khóa phụ nên vẫn an toàn.
+    if (code === "ENOENT" || (process.platform === "win32" && TRANSIENT_CODES.has(code))) {
+      return undefined;
+    }
     throw error;
   }
 }
 
-async function takeLock(lockFile: string, pid: number, isAlive: (pid: number) => boolean) {
+async function readOwner(lockFile: string): Promise<number | null> {
+  return (await readLock(lockFile)) ?? null;
+}
+
+const MAX_ATTEMPTS = 40;
+const RETRY_DELAY_MS = 25;
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Gỡ lock của tiến trình đã chết, an toàn khi nhiều tiến trình cùng làm việc này.
+ *
+ * Nếu gỡ thẳng (`rm`) thì có race TOCTOU: B đọc thấy chủ cũ đã chết, A gỡ lock cũ và tạo lock mới,
+ * rồi B xóa nhầm lock của A. Kết quả là hai tiến trình cùng giữ lock. Ở đây chỉ ai tạo được
+ * `<lock>.takeover` mới được gỡ, và phải **đọc lại** chủ lock khi đang giữ khóa phụ đó. Lock chỉ
+ * bị xóa ở đây, nên giữa lúc đọc lại và lúc xóa không ai thay được lock.
+ */
+async function removeStaleLock(lockFile: string, pid: number, isAlive: (pid: number) => boolean) {
+  const guard = `${lockFile}.takeover`;
+  if (!(await createLockFile(guard, pid))) {
+    const guardOwner = await readLock(guard);
+    if (guardOwner !== undefined && (guardOwner === null || !isAlive(guardOwner))) {
+      // Khóa phụ của tiến trình chết giữa chừng (hiếm): bỏ nó rồi thử lại ngay.
+      await fsp.rm(guard, { force: true });
+      return;
+    }
+    // Có tiến trình khác đang gỡ (hoặc khóa phụ vừa bị xóa): chờ rồi thử lại từ đầu.
+    await delay(RETRY_DELAY_MS);
+    return;
+  }
+  try {
+    const owner = await readLock(lockFile);
+    if (owner !== undefined && owner !== pid && (owner === null || !isAlive(owner))) {
+      await fsp.rm(lockFile, { force: true });
+    }
+  } finally {
+    await fsp.rm(guard, { force: true });
+  }
+}
+
+/** Lấy file lock cho `pid` (export để test tranh chấp giữa nhiều tiến trình). */
+export async function claimLockFile(
+  lockFile: string,
+  pid: number,
+  isAlive: (pid: number) => boolean,
+): Promise<void> {
   await fsp.mkdir(path.dirname(lockFile), { recursive: true });
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     if (await createLockFile(lockFile, pid)) return;
     const owner = await readOwner(lockFile);
     if (owner === pid) return;
     if (owner !== null && isAlive(owner)) throw new StoreLockedError(lockFile, owner);
-    // Lock của tiến trình đã chết (hoặc nội dung hỏng): gỡ rồi thử tạo lại một lần.
-    await fsp.rm(lockFile, { force: true });
+    // Lock của tiến trình đã chết (hoặc nội dung hỏng): gỡ có khóa phụ rồi thử tạo lại.
+    await removeStaleLock(lockFile, pid, isAlive);
   }
   throw new StoreLockedError(lockFile, await readOwner(lockFile));
 }
@@ -125,7 +183,7 @@ export function acquireStoreLock(storeFile: string, deps: ProcessLockDeps = {}):
 
   const lockFile = lockFileFor(storeFile);
   const held: HeldLock = { lockFile, pid, acquired: false, ready: Promise.resolve(lockFile) };
-  held.ready = takeLock(lockFile, pid, isAlive).then(
+  held.ready = claimLockFile(lockFile, pid, isAlive).then(
     () => {
       held.acquired = true;
       return lockFile;
