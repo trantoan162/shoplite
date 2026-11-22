@@ -1,13 +1,8 @@
 import { products } from "@/data/products";
 import type { Product } from "@/features/catalog/types";
-import { reconcileInventoryKeys, withLiveStock } from "@/features/inventory/stock";
-import {
-  createJsonFileShopRepository,
-  DEFAULT_ORDERS_FILE,
-  DEFAULT_STORE_FILE,
-} from "./order-repository";
+import { withLiveStock } from "@/features/inventory/stock";
 import { createOrderService } from "./order-service";
-import { buildInitialShopState, importLegacyOrders } from "./store-init";
+import { createShopStore } from "./shop-store";
 
 /**
  * Instance dùng chung của OrderService. Chỉ import file này từ code chạy trên server
@@ -19,14 +14,7 @@ import { buildInitialShopState, importLegacyOrders } from "./store-init";
  *
  * Tạo instance không đụng đĩa: khởi tạo store và PID lock chạy ở thao tác đầu tiên.
  */
-const repository = createJsonFileShopRepository(process.env.STORE_FILE || DEFAULT_STORE_FILE, {
-  initialize: async () =>
-    buildInitialShopState(
-      await importLegacyOrders(process.env.ORDERS_FILE || DEFAULT_ORDERS_FILE),
-      products,
-    ),
-  reconcile: (state) => reconcileInventoryKeys(state, products),
-});
+const repository = createShopStore();
 
 export const orderService = createOrderService({ repository });
 

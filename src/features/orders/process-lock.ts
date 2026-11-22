@@ -5,11 +5,12 @@ import { fileMutexKey } from "./mutex";
 
 /** Store đang được một tiến trình khác còn sống giữ (AD-5). */
 export class StoreLockedError extends Error {
-  constructor(
-    readonly lockFile: string,
-    /** `null` khi không xác định được chủ lock (lock đổi liên tục trong lúc thử). */
-    readonly ownerPid: number | null,
-  ) {
+  readonly lockFile: string;
+  /** `null` khi không xác định được chủ lock (lock đổi liên tục trong lúc thử). */
+  readonly ownerPid: number | null;
+
+  // Field khai báo tường minh (không dùng parameter properties) để chạy được bằng Node strip-types.
+  constructor(lockFile: string, ownerPid: number | null) {
     super(
       (ownerPid === null
         ? `Không lấy được lock ${lockFile} sau nhiều lần thử. `
@@ -19,6 +20,8 @@ export class StoreLockedError extends Error {
         "xóa file lock rồi khởi động lại.",
     );
     this.name = "StoreLockedError";
+    this.lockFile = lockFile;
+    this.ownerPid = ownerPid;
   }
 }
 
@@ -144,15 +147,30 @@ export function acquireStoreLock(storeFile: string, deps: ProcessLockDeps = {}):
  */
 export function releaseStoreLocks(): void {
   const reg = registry();
-  for (const held of reg.held.values()) {
-    if (!held.acquired) continue;
-    try {
-      if (parsePid(readFileSync(held.lockFile, "utf8")) === held.pid) unlinkSync(held.lockFile);
-    } catch {
-      // File đã mất hoặc không đọc được.
-    }
-  }
+  for (const held of reg.held.values()) unlinkIfOwned(held);
   reg.held.clear();
+}
+
+/** Thả lock của một store cụ thể (không đụng lock khác mà tiến trình đang giữ). */
+export function releaseStoreLock(
+  storeFile: string,
+  platform: NodeJS.Platform = process.platform,
+): void {
+  const reg = registry();
+  const key = fileMutexKey(storeFile, platform);
+  const held = reg.held.get(key);
+  if (!held) return;
+  unlinkIfOwned(held);
+  reg.held.delete(key);
+}
+
+function unlinkIfOwned(held: HeldLock): void {
+  if (!held.acquired) return;
+  try {
+    if (parsePid(readFileSync(held.lockFile, "utf8")) === held.pid) unlinkSync(held.lockFile);
+  } catch {
+    // File đã mất hoặc không đọc được.
+  }
 }
 
 function installExitHook() {

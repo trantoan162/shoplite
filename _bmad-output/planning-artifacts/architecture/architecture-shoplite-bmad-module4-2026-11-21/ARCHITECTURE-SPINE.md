@@ -325,7 +325,7 @@ src/
     inventory/  stock.ts (checkShortfall, deduct, restock, getStockLight, withLiveStock,
                 reconcileInventoryKeys), types.ts
     staff/      staff-config.ts, session.ts, login-throttle.ts, server.ts (requireStaff)
-scripts/stock-set.ts                         # AD-16
+scripts/stock-set.mts                        # AD-16 (chạy bằng Node strip-types + scripts/ts-resolve.mjs)
 storage/shop-store.json                      # runtime, gitignored
 ```
 
@@ -361,7 +361,7 @@ erDiagram
 | FR-2 khách tự hủy | `api/orders/[id]`, `orderService.cancelOrder` | AD-4, AD-8, AD-11 |
 | FR-3 kiểm tra stock khi đặt, badge, lọc | `placeOrder` mutator, product pages, `/api/products` | AD-9 |
 | FR-4 hợp đồng API | `src/lib/http.ts`, `orders/types.ts`, `public-order.ts` | AD-10, AD-11, AD-17 |
-| FR-5 tồn kho lưu bền | `orders/order-repository.ts`, `inventory/stock.ts`, `scripts/stock-set.ts` | AD-3, AD-9, AD-15, AD-16 |
+| FR-5 tồn kho lưu bền | `orders/order-repository.ts`, `inventory/stock.ts`, `scripts/stock-set.mts` | AD-3, AD-9, AD-15, AD-16 |
 | FR-6 PIN, phiên | `staff`, `proxy.ts`, `api/staff/session`, `app/(shop)` vs `app/staff` | AD-13, AD-14, AD-20 |
 | FR-7 Người thao tác | `statusHistory` | AD-10, AD-13 |
 | FR-8..FR-12 chuyển nguyên tử | `orders/order-transitions.ts`, `transitionOrder` | AD-3..AD-7, AD-17 |

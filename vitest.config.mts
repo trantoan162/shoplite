@@ -13,6 +13,9 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
+    // Nhiều test chạm file/tiến trình con (store, PID lock, stock:set); giới hạn worker để
+    // không quá tải máy dev (gây "Timeout starting forks runner" và timeout test).
+    maxWorkers: 4,
     css: false,
     coverage: {
       provider: "v8",

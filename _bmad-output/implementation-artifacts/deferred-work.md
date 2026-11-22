@@ -24,3 +24,6 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-6-dat-hang-kiem-ton-kho.md`
   summary: (Đã xử lý 2026-11-22) `placeOrder` chèn đơn kiểu insert-only và thử lại khi mã đơn trùng.
   evidence: Mục do Story 1.2 hoãn lại; đã xử lý trong mutator của Story 1.6, có test.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-8-stock-set.md`
+  summary: Thêm test cho nhánh `StoreLockedError` có `ownerPid: null` của `runStockSet`, và kiểm `npm run stock:set` trên Node 22.12 (mức tối thiểu trong `engines`).
+  evidence: Nhánh null chỉ xảy ra khi lock đổi chủ liên tục lúc đang lấy (hiếm). Strip-types trên Node 22.x là tính năng thử nghiệm; hiện mới kiểm trên Node 24.22.

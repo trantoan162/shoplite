@@ -109,6 +109,22 @@ curl -X POST http://localhost:3000/api/orders \
 | ------------- | --------------------- | --------------------------- |
 | `ORDERS_FILE` | `storage/orders.json` | Đường dẫn file lưu đơn hàng |
 
+### Đặt lại tồn kho (`stock:set`)
+
+Tồn kho nằm trong `storage/shop-store.json` (biến `STORE_FILE`). Không sửa file này bằng tay; dùng:
+
+```bash
+npm run stock:set -- p004=10 p010=150
+# p004: 2 → 10 (+8)
+# p010: 200 → 150 (-50)
+```
+
+- Mỗi tham số dạng `<mã sản phẩm>=<số lượng>` (số nguyên ≥ 0). Sai bất kỳ tham số nào thì không ghi gì.
+- **Dừng server trước**: lệnh dùng chung PID lock với server. Server lấy lock ở lần truy cập store đầu tiên, nên khi server đã phục vụ request thì lệnh sẽ từ chối (exit 1); đừng dựa vào điều này với server vừa khởi động — luôn dừng server trước.
+- Store đích theo `STORE_FILE` (mặc định `storage/shop-store.json`); chưa có store thì lệnh khởi tạo như server (nhập `ORDERS_FILE` nếu có).
+- Thoát `0` khi thành công, `1` khi tham số sai, store bị khóa hoặc hỏng — không ghi gì trong các trường hợp lỗi.
+- Phần chênh lệch được cộng vào mốc khởi tạo (`inventoryBaseline`) để đối soát tồn kho vẫn khớp.
+
 ### Dữ liệu khi chạy E2E
 
 `npm run test:e2e` tự khởi động server riêng với dữ liệu trong `.e2e/` (bị xóa ở đầu mỗi lần chạy, đã gitignore), không bao giờ ghi vào `storage/` thật. Biến môi trường cho server test nằm trong `e2e/e2e-env.ts`.
